@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hoz Serkany — Resume</title>
+    <style>
+      @page {
+        size: letter;
+        margin: 0.55in 0.6in;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: #0f172a;
+        font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 10pt;
+        line-height: 1.4;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      ul {
+        margin: 0;
+      }
+
+      a {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+
+      .header {
+        border-bottom: 2px solid #1d4ed8;
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+      }
+
+      .header h1 {
+        font-size: 22pt;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+      }
+
+      .header .title {
+        margin-top: 3px;
+        font-size: 12pt;
+        font-weight: 600;
+        color: #1d4ed8;
+      }
+
+      .contact {
+        margin-top: 6px;
+        font-size: 9pt;
+        color: #334155;
+      }
+
+      .contact span + span::before {
+        content: ' · ';
+        color: #94a3b8;
+      }
+
+      .summary {
+        margin-bottom: 12px;
+        color: #334155;
+        font-size: 9.5pt;
+      }
+
+      section {
+        margin-bottom: 11px;
+      }
+
+      section > h2 {
+        font-size: 10.5pt;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #0f172a;
+        border-bottom: 1px solid #cbd5e1;
+        padding-bottom: 3px;
+        margin-bottom: 7px;
+      }
+
+      .role,
+      .project,
+      .edu-block,
+      .pub,
+      .volunteer {
+        margin-bottom: 8px;
+      }
+
+      .role:last-child,
+      .project:last-child {
+        margin-bottom: 0;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+      }
+
+      .role-title,
+      .project-name,
+      .edu-degree {
+        font-weight: 700;
+        font-size: 10pt;
+      }
+
+      .role-company,
+      .edu-school {
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .period {
+        flex-shrink: 0;
+        font-size: 9pt;
+        color: #64748b;
+        white-space: nowrap;
+      }
+
+      ul.bullets {
+        margin-top: 3px;
+        padding-left: 1.1em;
+      }
+
+      ul.bullets li {
+        margin-bottom: 2px;
+        color: #1e293b;
+      }
+
+      ul.bullets li::marker {
+        color: #64748b;
+      }
+
+      .project-desc,
+      .pub-summary,
+      .volunteer-desc,
+      .award {
+        margin-top: 2px;
+        color: #334155;
+      }
+
+      .tech {
+        margin-top: 2px;
+        font-size: 8.5pt;
+        color: #64748b;
+      }
+
+      .skills-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 16px;
+      }
+
+      .skill-row {
+        display: flex;
+        gap: 6px;
+      }
+
+      .skill-cat {
+        flex-shrink: 0;
+        font-weight: 700;
+        min-width: 7.5em;
+      }
+
+      .skill-items {
+        color: #334155;
+      }
+
+      .courses {
+        margin-top: 3px;
+        color: #334155;
+        font-size: 9pt;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <h1>Hoz Serkany</h1>
+      <p class="title">Computer Engineering</p>
+      <p class="contact">
+        <span>Ottawa, Ontario, Canada</span>
+        <span><a href="mailto:hozserkany@gmail.com">hozserkany@gmail.com</a></span>
+        <span
+          ><a href="https://www.linkedin.com/in/hoz-s-71873550/"
+            >linkedin.com/in/hoz-s-71873550</a
+          ></span
+        >
+        <span><a href="https://github.com/Xblur">github.com/Xblur</a></span>
+      </p>
+    </header>
+
+    <p class="summary">
+      Computer engineering professional with production experience building
+      full-stack web platforms, Node.js backend services, Redux/Next.js
+      frontends, and embedded Linux systems. Delivered AWS (ECS, EKS, Lambda,
+      S3) deployments at Sensofusion and CI/CD automation at Ericsson; also
+      built operator-facing command-and-control interfaces, live telemetry
+      dashboards, and geospatial visualizations. Founder of Şandin Tech Inc.,
+      leading product engineering from architecture through launch. Experienced
+      in field deployments and cross-functional hardware/software integration.
+    </p>
+
+    <section>
+      <h2>Experience</h2>
+
+      <article class="role">
+        <div class="row">
+          <p>
+            <span class="role-title">Full-Stack Software Developer</span> —
+            <span class="role-company">Sensofusion</span>
+          </p>
+          <p class="period">September 2025 – February 2026</p>
+        </div>
+        <ul class="bullets">
+          <li>
+            Fixed 30+ production bugs and shipped UI/UX improvements, including
+            a mobile-view redesign, improving reliability and operator
+            usability.
+          </li>
+          <li>
+            Rebuilt and validated the Playwright end-to-end test suite,
+            improving CI reliability and regression coverage.
+          </li>
+          <li>
+            Deployed production workloads on AWS (ECS, EKS, Lambda, S3) and
+            configured Cloudflare for secure routing and edge delivery.
+          </li>
+          <li>
+            Developed and maintained the command-and-control Next.js application
+            with Redux, integrating multiple sensor types and countermeasure
+            systems.
+          </li>
+          <li>
+            Built live telemetry dashboards and geospatial map views (D3.js,
+            Leaflet, Mapbox, WebGL) for operator situational awareness.
+          </li>
+          <li>
+            Built Node.js backend-for-frontend (BFF) services to ingest,
+            normalize, and stream sensor and mission data to the C2 client.
+          </li>
+          <li>
+            Reduced streamed payload volume by 70% for duplicated notifications
+            through structural backend optimizations.
+          </li>
+          <li>
+            Supported Canadian market expansion through on-site field
+            deployments, live customer demonstrations, and hardware/software
+            integration.
+          </li>
+        </ul>
+      </article>
+
+      <article class="role">
+        <div class="row">
+          <p>
+            <span class="role-title">Founder / Director</span> —
+            <span class="role-company">Şandin Tech Inc.</span>
+          </p>
+          <p class="period">January 2023 – Present</p>
+        </div>
+        <ul class="bullets">
+          <li>
+            Lead Şandin Tech end to end—problem validation, product engineering,
+            go-to-market, and startup operations for the Şand peer-to-peer
+            delivery platform.
+          </li>
+          <li>
+            Architect and maintain a Next.js/Express/MongoDB platform with
+            modular REST APIs, containerized environments, and CI/CD-ready
+            testing infrastructure.
+          </li>
+          <li>
+            Build core product capabilities including JWT authentication,
+            geolocation filtering, user verification, trust-based ratings, and
+            video upload/streaming workflows.
+          </li>
+          <li>
+            Built geospatial map views and server-side map tile generation using
+            D3.js, Leaflet, Mapbox, and WebGL to support delivery discovery and
+            workflow UI.
+          </li>
+        </ul>
+      </article>
+
+      <article class="role">
+        <div class="row">
+          <p>
+            <span class="role-title">Cloud RAN Software Developer (Co-op)</span>
+            — <span class="role-company">Ericsson</span>
+          </p>
+          <p class="period">May 2021 – April 2023</p>
+        </div>
+        <ul class="bullets">
+          <li>
+            Developed a cloud-enabled messaging system for radio equipment
+            running on embedded Linux.
+          </li>
+          <li>
+            Coordinated integration of software modules with existing radio
+            control systems and legacy interfaces.
+          </li>
+          <li>
+            Configured embedded Linux startup and system initialization for
+            radio equipment; optimized software to run on a single processor
+            core.
+          </li>
+          <li>
+            Created Jenkins CI/CD pipelines for automated module testing and
+            wrote scripts to automate submodule testing post-merge.
+          </li>
+          <li>
+            Migrated legacy unit testing code from C to C++ and automated unit
+            testing through designed test configurations.
+          </li>
+        </ul>
+      </article>
+    </section>
+
+    <section>
+      <h2>Projects</h2>
+
+      <article class="project">
+        <p class="project-name">Raspberry Pi Home Assistant Hub</p>
+        <p class="project-desc">
+          Deployed and maintain a Raspberry Pi-based Home Assistant instance—OS
+          imaging, networking setup, sensor and device integrations,
+          automations, and ongoing administration.
+        </p>
+        <p class="tech">Raspberry Pi OS · Home Assistant · Python · TCP/IP</p>
+      </article>
+
+      <article class="project">
+        <p class="project-name">Autonomous Driving (Queen’s AutoDrive)</p>
+        <p class="project-desc">
+          Worked on 3D point cloud segmentation and classification using ROS for
+          system integration on an autonomous vehicle platform.
+        </p>
+        <p class="tech">Python · ROS · Keras · CNN · Transformers</p>
+      </article>
+
+      <article class="project">
+        <p class="project-name">Facial Emotion &amp; Gesture Recognition</p>
+        <p class="project-desc">
+          Trained a CNN to classify seven emotions from images (90% accuracy)
+          and designed a live-video gesture recognition system above 20 fps that
+          synthesizes speech from a custom dictionary (70% accuracy).
+        </p>
+        <p class="tech">
+          Python · Flask · OpenCV · Keras · TensorFlow · NumPy
+        </p>
+      </article>
+
+      <article class="project">
+        <p class="project-name">Deepfake Detection</p>
+        <p class="project-desc">
+          Built and trained a deep neural network to detect deepfake images.
+        </p>
+        <p class="tech">Python · Flask · TensorFlow · Pandas</p>
+      </article>
+
+      <article class="project">
+        <p class="project-name">Elopement Prevention System</p>
+        <p class="project-desc">
+          Designed a sensor-integrated system to secure nursing home premises
+          using embedded hardware and wireless connectivity.
+        </p>
+        <p class="tech">
+          C++ · Hardware · Sensors · Bluetooth Mesh · RFID · IR
+        </p>
+      </article>
+
+      <article class="project">
+        <p class="project-name">16-bit Microprocessor Design</p>
+        <p class="project-desc">
+          Simulated a custom processor with branching functionalities and UART
+          integration.
+        </p>
+        <p class="tech">Assembly · VHDL · ModelSim · Altera</p>
+      </article>
+    </section>
+
+    <section>
+      <h2>Skills</h2>
+      <div class="skills-grid">
+        <div class="skill-row">
+          <span class="skill-cat">Languages</span>
+          <span class="skill-items"
+            >C++, Python, TypeScript, JavaScript, C, Java, SQL, bash, Go
+            (familiar), C# (familiar)</span
+          >
+        </div>
+        <div class="skill-row">
+          <span class="skill-cat">Web &amp; APIs</span>
+          <span class="skill-items"
+            >Next.js, React, Redux, Node.js, Express, REST, MongoDB,
+            Playwright</span
+          >
+        </div>
+        <div class="skill-row">
+          <span class="skill-cat">Cloud &amp; DevOps</span>
+          <span class="skill-items"
+            >AWS (ECS, EKS, Lambda, S3), Docker, Kubernetes, Jenkins, CI/CD,
+            Git</span
+          >
+        </div>
+        <div class="skill-row">
+          <span class="skill-cat">Systems &amp; embedded</span>
+          <span class="skill-items"
+            >Embedded Linux, Microcontrollers, Raspberry Pi, TCP/IP, Home
+            Assistant</span
+          >
+        </div>
+        <div class="skill-row">
+          <span class="skill-cat">AI/ML</span>
+          <span class="skill-items"
+            >TensorFlow, PyTorch, OpenCV, Computer vision, Scikit-learn</span
+          >
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Education</h2>
+      <div class="edu-block">
+        <div class="row">
+          <p>
+            <span class="edu-degree"
+              >Bachelor of Applied Science, Computer Engineering (Innovation
+              Stream)</span
+            >
+            — <span class="edu-school">Queen’s University</span>
+          </p>
+          <p class="period">September 2017 – April 2023</p>
+        </div>
+        <p class="courses">
+          <strong>Coursework:</strong> Operating Systems, Algorithms,
+          Cryptography &amp; Network Security, Microprocessor Systems, Image
+          Processing, Neural &amp; Genetic Computing, Digital Systems
+          Engineering, Software Quality Assurance
+        </p>
+        <p class="award">
+          <strong>Award:</strong> First place, mechatronics/robotics
+          competition—built and programmed a robot with fine-tuned servo motion
+          control and multi-sensor feedback (C++, Arduino).
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Publication</h2>
+      <div class="pub">
+        <div class="row">
+          <p class="project-name">Stroke Prediction</p>
+          <p class="period">December 2021</p>
+        </div>
+        <p class="project-desc">David Publishing Company</p>
+        <p class="pub-summary">
+          Developed a machine learning model using a Multilayer Perceptron to
+          predict stroke susceptibility.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Volunteer</h2>
+      <div class="volunteer">
+        <div class="row">
+          <p>
+            <span class="role-title">Chatbot Development (VisaPlace)</span> —
+            <span class="role-company">QMIND AI Consulting</span>
+          </p>
+          <p class="period">September 2020 – April 2021</p>
+        </div>
+        <p class="volunteer-desc">
+          Developed an AI chatbot using BotPress to automate applicant
+          processing and scoring for an immigration law firm.
+        </p>
+        <p class="tech">TypeScript · Docker · BotPress · Git</p>
+      </div>
+    </section>
+  </body>
+</html>
