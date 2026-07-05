@@ -1,5 +1,10 @@
 <script setup lang="ts">
+import { RouterLink } from 'vue-router'
 import { resume } from '../data/resume'
+
+function isInternalDemo(url: string) {
+  return url.startsWith('/')
+}
 </script>
 
 <template>
@@ -18,9 +23,48 @@ import { resume } from '../data/resume'
           :key="project.name"
           class="card-soft flex flex-col p-5 sm:p-6"
         >
-          <h3 class="text-lg font-semibold leading-snug text-ink">
-            {{ project.name }}
-          </h3>
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="text-lg font-semibold leading-snug text-ink">
+              {{ project.name }}
+            </h3>
+            <div
+              v-if="project.demoUrl || project.url"
+              class="flex shrink-0 flex-wrap items-center justify-end gap-3"
+            >
+              <RouterLink
+                v-if="project.demoUrl && isInternalDemo(project.demoUrl)"
+                :to="project.demoUrl"
+                class="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white no-underline transition hover:bg-accent/90"
+              >
+                Live demo
+                <span class="sr-only">: {{ project.name }}</span>
+              </RouterLink>
+              <a
+                v-else-if="project.demoUrl"
+                :href="project.demoUrl"
+                class="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white no-underline transition hover:bg-accent/90"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Live demo
+                <span class="sr-only"
+                  >: {{ project.name }} (opens in a new tab)</span
+                >
+              </a>
+              <a
+                v-if="project.url"
+                :href="project.url"
+                class="text-sm font-medium text-accent no-underline hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub
+                <span class="sr-only"
+                  >: {{ project.name }} (opens in a new tab)</span
+                >
+              </a>
+            </div>
+          </div>
           <p class="mt-2 flex-1 text-sm leading-relaxed text-slate sm:text-base">
             {{ project.description }}
           </p>
@@ -33,18 +77,6 @@ import { resume } from '../data/resume'
               {{ tech }}
             </li>
           </ul>
-          <a
-            v-if="project.url"
-            :href="project.url"
-            class="mt-4 inline-block text-sm font-medium text-accent no-underline hover:underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub
-            <span class="sr-only"
-              >: {{ project.name }} (opens in a new tab)</span
-            >
-          </a>
         </li>
       </ul>
     </div>

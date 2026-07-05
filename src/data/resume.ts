@@ -22,6 +22,7 @@ export interface Project {
   description: string
   tech: string[]
   url?: string
+  demoUrl?: string
 }
 
 export interface SkillGroup {
@@ -147,7 +148,7 @@ export const resume: Resume = {
       description:
         'Trained a CNN to classify seven emotions from images (90% accuracy) and designed a live-video gesture recognition system above 20 fps that synthesizes speech from a custom dictionary (70% accuracy).',
       tech: ['Python', 'Flask', 'OpenCV', 'Keras', 'TensorFlow', 'NumPy'],
-      url: 'https://github.com/Xblur/ELEC490_Gesture_Recognition',
+      demoUrl: '/demos/gesture-recognition',
     },
     {
       name: 'Deepfake Detection',

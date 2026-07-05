@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { resume } from '../data/resume'
 
 const menuOpen = ref(false)
@@ -36,13 +37,13 @@ onUnmounted(() => {
       class="page-container flex items-center justify-between gap-4 py-3"
       aria-label="Primary"
     >
-      <a
-        href="#top"
+      <RouterLink
+        :to="{ path: '/', hash: '#top' }"
         class="text-sm font-semibold tracking-tight text-ink no-underline hover:text-accent"
         @click="closeMenu"
       >
         {{ resume.name }}
-      </a>
+      </RouterLink>
 
       <button
         type="button"
@@ -60,13 +61,13 @@ onUnmounted(() => {
         :class="menuOpen ? 'flex' : 'hidden md:flex'"
       >
         <li v-for="link in resume.nav" :key="link.id">
-          <a
-            :href="`#${link.id}`"
+          <RouterLink
+            :to="{ path: '/', hash: `#${link.id}` }"
             class="block rounded-md px-3 py-2 text-sm font-medium text-slate no-underline hover:bg-accent-soft hover:text-accent"
             @click="closeMenu"
           >
             {{ link.label }}
-          </a>
+          </RouterLink>
         </li>
       </ul>
     </nav>
