@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { RouterLink } from 'vue-router'
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
 import { BlinkDetector, GestureConfirmator, HoldCommandDetector } from '../lib/blinkDetect'
@@ -15,6 +15,7 @@ import {
 
 const videoRef = useTemplateRef<HTMLVideoElement>('video')
 const canvasRef = useTemplateRef<HTMLCanvasElement>('canvas')
+const sequenceScrollRef = useTemplateRef<HTMLDivElement>('sequenceScroll')
 
 const status = ref<'loading' | 'ready' | 'error'>('loading')
 const errorMessage = ref('')
@@ -58,9 +59,13 @@ const gestureGuide = computed(() =>
   })),
 )
 
-const sequencePreview = computed(() =>
-  gestureSequence.value.map((name) => GESTURE_SPEECH[name]).join(' · '),
-)
+function scrollSequenceToEnd() {
+  void nextTick(() => {
+    const el = sequenceScrollRef.value
+    if (!el) return
+    el.scrollLeft = el.scrollWidth
+  })
+}
 
 function showFeedback(message: string) {
   actionFeedback.value = message
@@ -68,6 +73,18 @@ function showFeedback(message: string) {
   feedbackTimer = window.setTimeout(() => {
     actionFeedback.value = ''
   }, 2200)
+}
+
+/** Map vertical wheel movement to horizontal scroll on the sequence strip. */
+function onSequenceWheel(event: WheelEvent) {
+  const el = sequenceScrollRef.value
+  if (!el || el.scrollWidth <= el.clientWidth) return
+
+  const delta = event.deltaY !== 0 ? event.deltaY : event.deltaX
+  if (delta === 0) return
+
+  event.preventDefault()
+  el.scrollLeft += delta
 }
 
 function resetTrackingState() {
@@ -85,6 +102,7 @@ function appendToSequence(name: FaceGesture) {
   if (name === 'Neutral') return
   gestureSequence.value = [...gestureSequence.value, name]
   showFeedback(`Added ${name}`)
+  scrollSequenceToEnd()
 }
 
 function removeLastFromSequence() {
@@ -425,14 +443,16 @@ onUnmounted(() => {
             </div>
 
             <div
-              class="absolute bottom-0 left-0 right-0 border-t border-white/10 bg-ink/80 px-3 py-2.5 text-white"
+              class="pointer-events-auto absolute bottom-0 left-0 right-0 border-t border-white/10 bg-ink/80 px-3 py-2.5 text-white"
+              @wheel="onSequenceWheel"
             >
               <p class="text-[10px] uppercase tracking-wide text-white/70">
                 Gesture sequence
               </p>
               <div
                 v-if="gestureSequence.length > 0"
-                class="mt-1.5 flex gap-2 overflow-x-auto pb-0.5"
+                ref="sequenceScroll"
+                class="sequence-scroll mt-1.5 flex flex-nowrap gap-2 overflow-x-auto pb-0.5"
                 aria-label="Built gesture sequence"
               >
                 <span
@@ -450,13 +470,6 @@ onUnmounted(() => {
               </div>
               <p v-else class="mt-1 text-xs text-white/60">
                 No gestures queued — hold a gesture 0.5s, then blink to add
-              </p>
-              <p
-                v-if="sequencePreview"
-                class="mt-1.5 truncate text-xs text-white/70"
-                :title="sequencePreview"
-              >
-                {{ sequencePreview }}
               </p>
             </div>
             </div>

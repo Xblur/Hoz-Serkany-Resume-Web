@@ -17,7 +17,7 @@ function isInternalDemo(url: string) {
       <p class="section-label">Selected work</p>
       <h2 id="projects-heading" class="section-title">Projects</h2>
 
-      <ul class="mt-8 grid gap-5 sm:grid-cols-2">
+      <ul class="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         <li
           v-for="project in resume.projects"
           :key="project.name"

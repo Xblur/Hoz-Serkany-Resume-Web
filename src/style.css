@@ -57,13 +57,18 @@ button:focus-visible {
 .page-container {
   margin-inline: auto;
   width: 100%;
-  max-width: 64rem;
   padding-inline: 1rem;
 }
 
 @media (min-width: 640px) {
   .page-container {
     padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .page-container {
+    padding-inline: 2rem;
   }
 }
 
@@ -126,4 +131,10 @@ button:focus-visible {
     0 0 0 3px var(--color-surface),
     0 0 0 5px var(--color-accent-ring),
     var(--shadow-photo);
+}
+
+.sequence-scroll {
+  flex-wrap: nowrap;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.4) transparent;
 }

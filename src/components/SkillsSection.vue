@@ -12,7 +12,7 @@ import { resume } from '../data/resume'
       <p class="section-label">Capabilities</p>
       <h2 id="skills-heading" class="section-title">Skills</h2>
 
-      <dl class="mt-8 grid gap-5 sm:grid-cols-2">
+      <dl class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="group in resume.skills"
           :key="group.category"
