@@ -25,7 +25,6 @@ const pauseLocked = ref(false)
 const pauseEnabled = ref(false)
 const triggerRef = ref<HTMLButtonElement | null>(null)
 const dialogRef = ref<HTMLDivElement | null>(null)
-const tapZoneRef = ref<HTMLDivElement | null>(null)
 const previouslyFocused = ref<HTMLElement | null>(null)
 /** In-memory only — resets on hard refresh / new tab. */
 const storyVersion = ref<string | null>(null)
@@ -35,7 +34,7 @@ let timerId: ReturnType<typeof setTimeout> | null = null
 let holdTimerId: ReturnType<typeof setTimeout> | null = null
 /** Suppress tap navigation after a hold-to-pause gesture. */
 let suppressNextTap = false
-const HOLD_PAUSE_MS = 180
+const HOLD_PAUSE_MS = 400
 
 const isSeen = computed(
   () => storyVersion.value !== null && seenVersion.value === storyVersion.value,
@@ -87,8 +86,9 @@ function scheduleFinalClose() {
 }
 
 function togglePause() {
-  pauseLocked.value = !pauseLocked.value
-  if (pauseLocked.value) {
+  const shouldPause = !isPaused.value
+  pauseLocked.value = shouldPause
+  if (shouldPause) {
     pausePlayback()
   } else {
     resumePlayback()
@@ -244,29 +244,26 @@ function goPrev() {
   }
 }
 
-function onTapZone(event: MouseEvent) {
-  if (pauseLocked.value || suppressNextTap) {
+function onTapPrev() {
+  if (suppressNextTap) {
     suppressNextTap = false
     return
   }
-  const target = event.currentTarget as HTMLElement
-  const rect = target.getBoundingClientRect()
-  const x = event.clientX - rect.left
-  if (x < rect.width / 2) {
-    goPrev()
-  } else {
-    goNext()
-  }
+  goPrev()
 }
 
-function onPointerDown(event: PointerEvent) {
+function onTapNext() {
+  if (suppressNextTap) {
+    suppressNextTap = false
+    return
+  }
+  goNext()
+}
+
+function onCenterPointerDown(event: PointerEvent) {
   if (prefersReducedMotion.value || !pauseEnabled.value || pauseLocked.value) return
   if (event.button !== 0) return
 
-  const zone = tapZoneRef.value
-  if (!zone) return
-
-  zone.setPointerCapture(event.pointerId)
   clearHoldTimer()
   holdTimerId = setTimeout(() => {
     holdTimerId = null
@@ -275,12 +272,7 @@ function onPointerDown(event: PointerEvent) {
   }, HOLD_PAUSE_MS)
 }
 
-function onPointerUp(event: PointerEvent) {
-  const zone = tapZoneRef.value
-  if (zone?.hasPointerCapture(event.pointerId)) {
-    zone.releasePointerCapture(event.pointerId)
-  }
-
+function onCenterPointerUp() {
   if (holdTimerId !== null) {
     clearHoldTimer()
     return
@@ -291,9 +283,9 @@ function onPointerUp(event: PointerEvent) {
   }
 }
 
-function onPointerCancel(event: PointerEvent) {
+function onCenterPointerCancel() {
   clearHoldTimer()
-  onPointerUp(event)
+  onCenterPointerUp()
 }
 
 watch(currentSlide, (idx) => {
@@ -401,10 +393,10 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="absolute top-1/2 left-4 -translate-y-1/2 rounded-md px-2.5 py-1 text-sm text-white/80 hover:bg-white/10 hover:text-white"
-          :aria-label="pauseLocked ? 'Resume story' : 'Pause story'"
+          :aria-label="isPaused ? 'Resume story' : 'Pause story'"
           @click.stop="togglePause"
         >
-          <span aria-hidden="true">{{ pauseLocked ? '▶' : '⏸' }}</span>
+          <span aria-hidden="true">{{ isPaused ? '▶' : '⏸' }}</span>
         </button>
         <p class="text-center text-xl font-semibold text-white sm:text-2xl">
           {{ slides[currentSlide]?.label ?? 'Loading…' }}
@@ -419,32 +411,37 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <!-- Tap zones -->
-      <div
-        ref="tapZoneRef"
-        class="relative flex flex-1 flex-col touch-none select-none"
-        @click="onTapZone"
-        @pointerdown="onPointerDown"
-        @pointerup="onPointerUp"
-        @pointercancel="onPointerCancel"
-      >
-        <div class="pointer-events-none absolute inset-0 flex">
-          <div class="w-1/3" aria-hidden="true" />
-          <div class="w-1/3" aria-hidden="true" />
-          <div class="w-1/3" aria-hidden="true" />
-        </div>
+      <!-- Story body: side tap zones + center content (links/buttons don't advance slides) -->
+      <div class="relative flex min-h-0 flex-1 items-center justify-center">
+        <button
+          type="button"
+          class="absolute inset-y-0 left-0 z-30 w-1/4 cursor-pointer border-0 bg-transparent p-0"
+          aria-label="Previous slide"
+          @click="onTapPrev"
+        />
+        <button
+          type="button"
+          class="absolute inset-y-0 right-0 z-30 w-1/4 cursor-pointer border-0 bg-transparent p-0"
+          aria-label="Next slide"
+          @click="onTapNext"
+        />
 
-        <div class="flex flex-1 items-center justify-center px-6 pb-16 sm:px-10">
+        <div
+          class="pointer-events-none relative z-20 flex w-full max-w-lg justify-center px-6 pb-16 sm:px-10"
+        >
           <div
             v-if="isLoading"
-            class="text-center text-white/70"
+            class="pointer-events-auto text-center text-white/70"
           >
             Loading story…
           </div>
 
           <div
             v-else
-            class="pointer-events-auto max-w-lg text-center"
+            class="pointer-events-auto inline-block max-w-full text-center"
+            @pointerdown="onCenterPointerDown"
+            @pointerup="onCenterPointerUp"
+            @pointercancel="onCenterPointerCancel"
           >
             <p
               v-if="currentSlide === 0 && slides[currentSlide]?.kind === 'fact' && fallbackLabel"
@@ -463,7 +460,6 @@ onBeforeUnmount(() => {
               target="_blank"
               rel="noopener noreferrer"
               class="mt-6 inline-block text-sm text-accent-ring underline underline-offset-2 hover:text-white"
-              @click.stop
             >
               {{ slides[currentSlide]?.sourceTitle ?? 'Source' }}
               <span class="sr-only"> (opens in a new tab)</span>
@@ -473,7 +469,7 @@ onBeforeUnmount(() => {
               v-if="slides[currentSlide]?.ctaHref"
               :href="slides[currentSlide]!.ctaHref"
               class="mt-8 inline-flex items-center rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-white no-underline hover:bg-accent-hover"
-              @click.stop="closeStory"
+              @click="closeStory"
             >
               {{ slides[currentSlide]?.ctaLabel ?? 'Learn more' }}
             </a>

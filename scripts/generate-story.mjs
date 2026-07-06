@@ -1,34 +1,37 @@
 #!/usr/bin/env node
 /**
- * Daily story generator: fetch HN + Dev.to headlines, format 1–3 facts per run,
- * append to today's entry in public/story-history.json, prune to 90 days.
+ * Daily story generator: search for recent tech headlines, let AI pick the best,
+ * write facts per run (STORY_FACT_COUNT), append to public/story-history.json, prune to 120 days.
  */
 
 import { readFile, writeFile } from 'node:fs/promises'
 import { createHash, randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import {
-  getActiveProviders,
-  callProviderModel,
-  getModelsToTry,
-} from './ai-providers.mjs'
+import { getActiveProviders, callProviderModel, getModelsToTry } from './ai-providers.mjs'
+import { discoverTechHeadlines, normalizeUrl } from './discover-headlines.mjs'
+import { storyToday, storyDaysAgo } from './story-date.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const HISTORY_PATH = join(__dirname, '..', 'public', 'story-history.json')
-const MAX_ENTRIES = 90
-const MAX_FACTS_PER_DAY = 8
-const FACTS_PER_RUN_MIN = 1
-const FACTS_PER_RUN_MAX = 3
+const MAX_ENTRIES = 120
+const DEFAULT_FACT_COUNT = 5
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
+function isStrictGenerate() {
+  const raw = process.env.STORY_GENERATE_STRICT ?? ''
+  return raw === '1' || raw.toLowerCase() === 'true'
+}
+
+function exitGenerate(code, message) {
+  if (message) {
+    if (code === 0) console.warn(message)
+    else console.error(message)
+  }
+  process.exit(code)
 }
 
 function pruneCutoffDate() {
-  const d = new Date()
-  d.setUTCDate(d.getUTCDate() - MAX_ENTRIES)
-  return d.toISOString().slice(0, 10)
+  return storyDaysAgo(MAX_ENTRIES)
 }
 
 function shuffle(arr) {
@@ -40,74 +43,55 @@ function shuffle(arr) {
   return a
 }
 
+function resolveFactCount(headlineCount) {
+  const raw = process.env.STORY_FACT_COUNT
+  const parsed = raw ? Number.parseInt(raw, 10) : DEFAULT_FACT_COUNT
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`Invalid STORY_FACT_COUNT: ${raw ?? '(unset)'}`)
+  }
+  return Math.min(parsed, headlineCount)
+}
+
 function hashSeed(str) {
   const hash = createHash('sha256').update(str).digest()
   return hash.readUInt32BE(0)
 }
 
-async function fetchHnTopStories(limit = 8) {
-  const idsRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json')
-  if (!idsRes.ok) throw new Error(`HN topstories failed: ${idsRes.status}`)
-  const ids = (await idsRes.json()).slice(0, limit)
-
-  const stories = await Promise.all(
-    ids.map(async (id) => {
-      const res = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)
-      if (!res.ok) return null
-      const item = await res.json()
-      if (!item?.title) return null
-      return {
-        title: item.title,
-        url: item.url ?? `https://news.ycombinator.com/item?id=${id}`,
-        source: 'Hacker News',
-      }
-    }),
-  )
-  return stories.filter(Boolean)
-}
-
-async function fetchDevToTopArticles(limit = 8) {
-  const res = await fetch(`https://dev.to/api/articles?per_page=${limit}&top=7`)
-  if (!res.ok) throw new Error(`Dev.to API failed: ${res.status}`)
-  const articles = await res.json()
-  return articles.slice(0, limit).map((a) => ({
-    title: a.title,
-    url: a.url,
-    source: 'Dev.to',
-  }))
-}
-
-function buildPromptForHeadline(headline, allHeadlines) {
-  const context = allHeadlines
-    .map((h, i) => `${i + 1}. [${h.source}] ${h.title}`)
+function buildPrompt(headlines, factCount) {
+  const list = headlines
+    .map((h, i) => {
+      const pub = h.publisher ? ` (${h.publisher})` : ''
+      return `${i + 1}.${pub} ${h.title}\n   ${h.url}`
+    })
     .join('\n')
 
-  return `You are writing a "tech fact of the day" for a computer engineering portfolio site.
+  return `You are writing tech facts for a computer engineering portfolio site's daily story.
 
-Today's tech headlines (for context):
-${context}
+Below are recent tech headlines discovered via open web search (pick the most interesting by number):
 
-Focus on THIS headline only:
-[${headline.source}] ${headline.title}
-${headline.url}
+${list}
 
-Write a 2–3 sentence fact with a concrete engineering angle (systems, embedded, cloud, AI/ML, web, security).
-Attribute the source article in sourceTitle and sourceUrl.
+Pick exactly ${factCount} different headline(s) with the strongest engineering angles (systems, embedded, cloud, AI/ML, web, security).
+Choose whichever source you think is most relevant and educational — you decide what is best.
+For each pick, write a 2–3 sentence fact that teaches something concrete.
+
+IMPORTANT: Return headlineIndex (the number from the list above, 1–${headlines.length}). Do NOT invent or copy URLs — we attach the correct link from the list.
 
 Return ONLY valid JSON:
-{"body":"...","sourceTitle":"...","sourceUrl":"..."}`
+{"facts":[{"body":"...","headlineIndex":1}]}`
 }
 
 function templateFact(headline, salt) {
   const angles = [
-    `Engineering teams are watching this ${headline.source} story: it signals how we build and ship software today.`,
-    `From ${headline.source}: a headline that matters for systems design, developer tooling, or production engineering.`,
-    `Worth a look from the ${headline.source} front page if you work across hardware, cloud, or full-stack platforms.`,
+    'A recent story worth noting for engineers working on systems, tooling, and production software.',
+    'This headline reflects something timely in how teams design, build, and ship technology.',
+    'Worth a read if you work across hardware, cloud, security, or full-stack platforms.',
   ]
   const angle = angles[hashSeed(salt) % angles.length]
+  const via = headline.publisher ? ` (${headline.publisher})` : ''
 
   return {
-    body: `${angle} "${headline.title}" — follow the source for the full write-up.`,
+    body: `${angle}${via}: "${headline.title}" — follow the source for the full write-up.`,
     sourceTitle: headline.title,
     sourceUrl: headline.url,
     provider: 'template',
@@ -115,7 +99,64 @@ function templateFact(headline, salt) {
   }
 }
 
-async function tryProvider(provider, apiKey, prompt) {
+function templateFacts(headlines, count, salt) {
+  return shuffle(headlines)
+    .slice(0, count)
+    .map((h, i) => templateFact(h, `${salt}:${i}`))
+}
+
+/** Match AI output to a headline from the fetched pool (never trust model URLs blindly). */
+function matchHeadline(fact, headlines) {
+  if (fact.headlineIndex != null) {
+    const idx = fact.headlineIndex - 1
+    if (idx >= 0 && idx < headlines.length) return headlines[idx]
+    return null
+  }
+
+  if (fact.sourceUrl) {
+    const target = normalizeUrl(fact.sourceUrl)
+    if (target) {
+      const byUrl = headlines.find((h) => normalizeUrl(h.url) === target)
+      if (byUrl) return byUrl
+    }
+  }
+
+  if (fact.sourceTitle) {
+    const title = fact.sourceTitle.toLowerCase()
+    const byTitle = headlines.find((h) => h.title.toLowerCase() === title)
+    if (byTitle) return byTitle
+  }
+
+  return null
+}
+
+/** Resolve facts to canonical title/URL from the headline pool; drop unmatched entries. */
+function resolveFactsToHeadlines(facts, headlines) {
+  const usedIndices = new Set()
+  const resolved = []
+
+  for (const fact of facts) {
+    const headline = matchHeadline(fact, headlines)
+    if (!headline) {
+      console.warn('  ⚠ dropped fact — headline not in pool:', fact.headlineIndex ?? fact.sourceTitle)
+      continue
+    }
+
+    const idx = headlines.indexOf(headline)
+    if (usedIndices.has(idx)) continue
+    usedIndices.add(idx)
+
+    resolved.push({
+      body: fact.body,
+      sourceTitle: headline.title,
+      sourceUrl: headline.url,
+    })
+  }
+
+  return resolved
+}
+
+async function tryProvider(provider, apiKey, prompt, factCount) {
   const { models, discoveryError } = await getModelsToTry(provider, apiKey)
 
   if (discoveryError) {
@@ -124,8 +165,11 @@ async function tryProvider(provider, apiKey, prompt) {
 
   for (const model of models) {
     try {
-      const result = await callProviderModel(provider, apiKey, model, prompt)
-      return { ...result, provider: provider.name, model }
+      const facts = await callProviderModel(provider, apiKey, model, prompt, {
+        multiFact: true,
+      })
+      console.log(`  ✓ ${facts.length} fact(s) via ${provider.name} (${model})`)
+      return { facts, provider: provider.name, model }
     } catch (err) {
       console.warn(`${provider.name}/${model} failed:`, err.message)
     }
@@ -134,26 +178,28 @@ async function tryProvider(provider, apiKey, prompt) {
   return null
 }
 
-async function generateFactForHeadline(headline, allHeadlines, salt) {
-  const prompt = buildPromptForHeadline(headline, allHeadlines)
+async function generateFacts(headlines, factCount, salt) {
+  const prompt = buildPrompt(headlines, factCount)
 
   for (const provider of getActiveProviders()) {
     const apiKey = process.env[provider.env]
     if (!apiKey) continue
 
-    const result = await tryProvider(provider, apiKey, prompt)
+    const result = await tryProvider(provider, apiKey, prompt, factCount)
     if (result) {
-      console.log(`  ✓ ${headline.title.slice(0, 50)}… via ${result.provider}`)
-      return result
+      const resolved = resolveFactsToHeadlines(result.facts, headlines)
+      if (resolved.length === 0) {
+        console.warn(`  ✗ ${provider.name}: no facts matched headline pool`)
+        continue
+      }
+      return resolved
+        .slice(0, factCount)
+        .map((f) => ({ ...f, provider: result.provider, model: result.model }))
     }
   }
 
-  console.log(`  ○ template fallback for "${headline.title.slice(0, 40)}…"`)
-  return templateFact(headline, salt)
-}
-
-function pickHeadlinesForRun(headlines, count) {
-  return shuffle(headlines).slice(0, count)
+  console.log(`  ○ template fallback for ${factCount} fact(s)`)
+  return templateFacts(headlines, factCount, salt)
 }
 
 function factsFromEntry(entry) {
@@ -181,7 +227,7 @@ function mergeFacts(existingFacts, newFacts) {
     })
   }
 
-  return merged.slice(-MAX_FACTS_PER_DAY)
+  return merged
 }
 
 async function readHistory() {
@@ -220,34 +266,27 @@ function upsertTodayFacts(history, today, newFacts) {
 async function main() {
   let headlines
   try {
-    const [hn, devto] = await Promise.all([fetchHnTopStories(8), fetchDevToTopArticles(8)])
-    headlines = shuffle([...hn, ...devto])
-    if (headlines.length === 0) throw new Error('No headlines fetched')
+    console.log('Searching for recent tech headlines…')
+    headlines = await discoverTechHeadlines()
+    if (headlines.length === 0) throw new Error('No headlines discovered')
   } catch (err) {
-    console.warn('Headline fetch failed — history unchanged:', err.message)
-    process.exit(0)
+    const message = `Headline discovery failed — history unchanged: ${err.message}`
+    exitGenerate(isStrictGenerate() ? 1 : 0, message)
   }
 
-  const runCount = Math.min(
-    headlines.length,
-    FACTS_PER_RUN_MIN +
-      Math.floor(Math.random() * (FACTS_PER_RUN_MAX - FACTS_PER_RUN_MIN + 1)),
+  const factCount = resolveFactCount(headlines.length)
+  const today = storyToday()
+  const salt = `${today}:${randomUUID()}`
+
+  console.log(
+    `Generating ${factCount} fact(s) for ${today} from ${headlines.length} search results (AI picks best)…`,
   )
-  const picks = pickHeadlinesForRun(headlines, runCount)
-  const today = todayIso()
 
-  console.log(`Generating ${picks.length} fact(s) for ${today}…`)
-
-  const newFacts = []
-  for (let i = 0; i < picks.length; i++) {
-    const headline = picks[i]
-    const salt = `${today}:${randomUUID()}:${i}`
-    const fact = await generateFactForHeadline(headline, headlines, salt)
-    newFacts.push({
-      ...fact,
-      generatedAt: new Date().toISOString(),
-    })
-  }
+  const generated = await generateFacts(headlines, factCount, salt)
+  const newFacts = generated.map((fact) => ({
+    ...fact,
+    generatedAt: new Date().toISOString(),
+  }))
 
   const history = await readHistory()
   const updated = upsertTodayFacts(history, today, newFacts)
@@ -260,6 +299,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.warn('Unexpected error — history unchanged:', err.message)
-  process.exit(0)
+  const message = `Unexpected error — history unchanged: ${err.message}`
+  exitGenerate(isStrictGenerate() ? 1 : 0, message)
 })

@@ -1,4 +1,5 @@
 import { pickTidbitForDate } from '../data/storyTidbits'
+import { storyDaysAgo, storyToday } from './storyDate'
 
 export interface StoryFact {
   label: string
@@ -76,16 +77,8 @@ const EMERGENCY_FACTS: StoryFact[] = [
 ]
 
 /** Max fact slides shown per story session (plus tidbit + CTA). */
-const MAX_FACT_SLIDES = 5
-const POOL_LOOKBACK_DAYS = 30
-
-function localToday(): string {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
+const MAX_FACT_SLIDES = 10
+const POOL_LOOKBACK_DAYS = 45
 
 function shuffle<T>(items: T[]): T[] {
   const arr = [...items]
@@ -103,12 +96,7 @@ function randomInt(min: number, max: number): number {
 }
 
 function daysAgoIso(days: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  return storyDaysAgo(days)
 }
 
 function normalizeFact(record: StoryFactRecord): StoryFact {
@@ -173,7 +161,7 @@ function pickRandomFacts(pool: StoryFactRecord[]): StoryFact[] {
 }
 
 function emergencyFact(): StoryFact {
-  const today = localToday()
+  const today = storyToday()
   const index = today.charCodeAt(today.length - 1) % EMERGENCY_FACTS.length
   return EMERGENCY_FACTS[index]!
 }
@@ -234,7 +222,7 @@ export function storyVersionFor(historyUpdatedAt: string, factCount: number, lat
 }
 
 export async function fetchStoryMeta(): Promise<StoryMeta> {
-  const today = localToday()
+  const today = storyToday()
   const history = await fetchHistory()
   const hasToday = hasTodayEntry(history, today)
 
@@ -251,7 +239,7 @@ export async function fetchStoryMeta(): Promise<StoryMeta> {
 }
 
 export async function loadDailyStory(): Promise<ResolvedStory> {
-  const today = localToday()
+  const today = storyToday()
   const history = await fetchHistory()
   const pool = collectFactPool(history, today)
   const pickedFacts = pickRandomFacts(pool)

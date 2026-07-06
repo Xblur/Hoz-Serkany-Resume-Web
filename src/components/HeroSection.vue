@@ -32,7 +32,7 @@ import { resume } from '../data/resume'
             {{ resume.title }}
           </p>
           <p
-            class="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted sm:text-lg md:mx-0"
+            class="mx-auto mt-5 text-base leading-relaxed text-muted sm:text-lg md:mx-0"
           >
             Computer engineering professional building full-stack web platforms,
             embedded Linux systems, and production software—hardware and

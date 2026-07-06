@@ -11,7 +11,7 @@ import { resume } from '../data/resume'
     <div class="page-container section-pad">
       <p class="section-label">Profile</p>
       <h2 id="about-heading" class="section-title">About</h2>
-      <p class="mt-5 max-w-3xl text-base leading-relaxed text-slate sm:text-lg">
+      <p class="mt-5 text-base leading-relaxed text-slate sm:text-lg">
         {{ resume.summary }}
       </p>
     </div>

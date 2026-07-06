@@ -4,7 +4,7 @@
  */
 
 export const SYSTEM_JSON =
-  'You return only valid JSON with keys body, sourceTitle, sourceUrl. No markdown, no code fences.'
+  'You return only valid JSON: {"facts":[{"body":"...","headlineIndex":1}]} where headlineIndex is the 1-based number from the headline list. No sourceUrl. No markdown.'
 
 /** Comma-separated provider names to skip, e.g. STORY_SKIP_PROVIDERS=gemini,github-models */
 export function getSkippedProviders() {
@@ -249,18 +249,34 @@ export async function probeAllProviders() {
 }
 
 function validateFact(parsed) {
-  if (!parsed.body || !parsed.sourceTitle || !parsed.sourceUrl) {
-    throw new Error('JSON missing required fields (body, sourceTitle, sourceUrl)')
+  if (!parsed.body) {
+    throw new Error('JSON missing required field: body')
   }
+
+  const body = String(parsed.body).trim()
+
+  if (parsed.headlineIndex != null) {
+    const headlineIndex = Number(parsed.headlineIndex)
+    if (!Number.isInteger(headlineIndex) || headlineIndex < 1) {
+      throw new Error('JSON missing valid headlineIndex (positive integer)')
+    }
+    return { body, headlineIndex }
+  }
+
+  // Legacy: model returned URLs directly (resolved against pool in generate-story)
+  if (!parsed.sourceTitle || !parsed.sourceUrl) {
+    throw new Error('JSON missing required fields (body + headlineIndex, or body/sourceTitle/sourceUrl)')
+  }
+
   return {
-    body: String(parsed.body).trim(),
+    body,
     sourceTitle: String(parsed.sourceTitle).trim(),
     sourceUrl: String(parsed.sourceUrl).trim(),
   }
 }
 
-/** Parse model output that should be JSON; tolerate fences and leading prose. */
-export function parseFactJson(text) {
+/** Parse one or more facts from model JSON output. */
+export function parseFactsJson(text) {
   let cleaned = text
     .trim()
     .replace(/^```(?:json)?\s*/i, '')
@@ -268,7 +284,6 @@ export function parseFactJson(text) {
     .trim()
 
   const attempts = [cleaned]
-
   const objectMatch = cleaned.match(/\{[\s\S]*\}/)
   if (objectMatch && objectMatch[0] !== cleaned) {
     attempts.push(objectMatch[0])
@@ -277,7 +292,13 @@ export function parseFactJson(text) {
   let lastError
   for (const candidate of attempts) {
     try {
-      return validateFact(JSON.parse(candidate))
+      const parsed = JSON.parse(candidate)
+      if (Array.isArray(parsed.facts)) {
+        const facts = parsed.facts.map(validateFact)
+        if (facts.length === 0) throw new Error('facts array is empty')
+        return facts
+      }
+      return [validateFact(parsed)]
     } catch (err) {
       lastError = err
     }
@@ -289,7 +310,21 @@ export function parseFactJson(text) {
   )
 }
 
-export async function callOpenAICompatible({ url, apiKey, model, prompt, extraHeaders = {} }) {
+/** Parse model output that should be JSON; tolerate fences and leading prose. */
+export function parseFactJson(text) {
+  const [fact] = parseFactsJson(text)
+  if (!fact) throw new Error('No facts in model response')
+  return fact
+}
+
+export async function callOpenAICompatible({
+  url,
+  apiKey,
+  model,
+  prompt,
+  extraHeaders = {},
+  maxTokens = 512,
+}) {
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -300,7 +335,7 @@ export async function callOpenAICompatible({ url, apiKey, model, prompt, extraHe
     body: JSON.stringify({
       model,
       temperature: 0.7,
-      max_tokens: 512,
+      max_tokens: maxTokens,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM_JSON },
@@ -318,23 +353,33 @@ export async function callOpenAICompatible({ url, apiKey, model, prompt, extraHe
   const text = data?.choices?.[0]?.message?.content
   if (!text) throw new Error('Empty response')
 
-  return parseFactJson(text)
+  return parseFactsJson(text)
 }
 
 const FACT_JSON_SCHEMA = {
   type: 'object',
   properties: {
     body: { type: 'string', description: '2-3 sentence tech fact' },
-    sourceTitle: { type: 'string' },
-    sourceUrl: { type: 'string' },
+    headlineIndex: {
+      type: 'integer',
+      description: '1-based index of the chosen headline from the user list',
+    },
   },
-  required: ['body', 'sourceTitle', 'sourceUrl'],
+  required: ['body', 'headlineIndex'],
 }
 
-export async function callGemini(prompt, apiKey, model) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+const FACTS_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    facts: {
+      type: 'array',
+      items: FACT_JSON_SCHEMA,
+    },
+  },
+  required: ['facts'],
+}
 
-  let text
+async function geminiRequest(url, prompt, schema, temperature = 0.4) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -344,10 +389,10 @@ export async function callGemini(prompt, apiKey, model) {
       },
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.4,
-        maxOutputTokens: 1024,
+        temperature,
+        maxOutputTokens: 1536,
         responseMimeType: 'application/json',
-        responseSchema: FACT_JSON_SCHEMA,
+        responseSchema: schema,
       },
     }),
   })
@@ -358,45 +403,29 @@ export async function callGemini(prompt, apiKey, model) {
   }
 
   const data = await res.json()
-  text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
   if (!text) throw new Error('Empty response')
 
+  return parseFactsJson(text)
+}
+
+export async function callGemini(prompt, apiKey, model, { multiFact = false } = {}) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+  const schema = multiFact ? FACTS_JSON_SCHEMA : FACT_JSON_SCHEMA
+
   try {
-    return parseFactJson(text)
+    return await geminiRequest(url, prompt, schema)
   } catch (parseErr) {
-    const retryPrompt = `${prompt}\n\nYour previous response was not valid JSON. Return ONLY one JSON object with keys body, sourceTitle, sourceUrl. Keep string values on one line.`
-    const retryRes = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: SYSTEM_JSON }],
-        },
-        contents: [{ parts: [{ text: retryPrompt }] }],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 1024,
-          responseMimeType: 'application/json',
-          responseSchema: FACT_JSON_SCHEMA,
-        },
-      }),
-    })
-
-    if (!retryRes.ok) {
-      throw parseErr
-    }
-
-    const retryData = await retryRes.json()
-    const retryText = retryData?.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!retryText) throw parseErr
-
-    return parseFactJson(retryText)
+    const retryPrompt = `${prompt}\n\nYour previous response was not valid JSON. Return ONLY JSON with a "facts" array (or single fact object). Keep string values on one line.`
+    return await geminiRequest(url, retryPrompt, schema, 0.2)
   }
 }
 
-export async function callProviderModel(provider, apiKey, model, prompt) {
+export async function callProviderModel(provider, apiKey, model, prompt, options = {}) {
+  const { multiFact = false, maxTokens = multiFact ? 1536 : 512 } = options
+
   if (provider.type === 'gemini') {
-    return callGemini(prompt, apiKey, model)
+    return callGemini(prompt, apiKey, model, { multiFact })
   }
   return callOpenAICompatible({
     url: provider.chatUrl,
@@ -404,5 +433,6 @@ export async function callProviderModel(provider, apiKey, model, prompt) {
     model,
     prompt,
     extraHeaders: provider.extraHeaders ?? {},
+    maxTokens,
   })
 }
