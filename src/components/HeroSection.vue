@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ProfileStory from './ProfileStory.vue'
 import { resume } from '../data/resume'
 </script>
 
@@ -13,14 +14,9 @@ import { resume } from '../data/resume'
         class="flex flex-col items-center gap-8 sm:gap-10 md:flex-row md:items-center md:gap-12"
       >
         <div class="shrink-0">
-          <img
-            :src="resume.photo"
-            :alt="resume.photoAlt"
-            width="176"
-            height="176"
-            class="portrait-ring h-36 w-36 rounded-full object-cover object-top sm:h-40 sm:w-40 md:h-44 md:w-44"
-            decoding="async"
-            fetchpriority="high"
+          <ProfileStory
+            :photo="resume.photo"
+            :photo-alt="resume.photoAlt"
           />
         </div>
 

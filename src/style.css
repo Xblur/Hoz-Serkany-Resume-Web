@@ -138,3 +138,90 @@ button:focus-visible {
   scrollbar-width: thin;
   scrollbar-color: rgb(255 255 255 / 0.4) transparent;
 }
+
+/* Instagram-style story ring around hero portrait */
+.story-ring {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  animation: none;
+}
+
+.story-ring::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  z-index: 0;
+  border-radius: 9999px;
+  padding: 3px;
+  background: conic-gradient(
+    from 0deg,
+    #1d4ed8,
+    #7c3aed,
+    #db2777,
+    #f59e0b,
+    #1d4ed8
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: story-ring-spin 3s linear infinite;
+}
+
+.story-ring--seen::before {
+  background: var(--color-line-strong);
+  animation: none;
+}
+
+.story-ring:focus-visible {
+  outline-offset: 4px;
+}
+
+.story-ring img {
+  position: relative;
+  z-index: 1;
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-photo);
+}
+
+@keyframes story-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes story-progress-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.story-progress-bar {
+  width: 0%;
+  animation-name: story-progress-fill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-ring::before {
+    animation: none;
+  }
+
+  .story-progress-bar {
+    animation: none;
+    width: 100%;
+  }
+}
