@@ -229,6 +229,15 @@ export const resume: Resume = {
         'Scikit-learn',
       ],
     },
+    {
+      category: 'Natural languages',
+      items: [
+        'English (fluent)',
+        'Kurdish (fluent)',
+        'Arabic (fluent)',
+        'French (B-level, self-assessed)',
+      ],
+    },
   ],
   education: {
     degree: 'Bachelor of Applied Science',
