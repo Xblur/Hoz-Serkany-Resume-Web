@@ -16,6 +16,17 @@ function formatDateInTimezone(date: Date, timeZone: string): string {
   return `${y}-${m}-${d}`
 }
 
+/** Subtract calendar days from a YYYY-MM-DD civil date. */
+function subtractCalendarDays(isoDate: string, days: number): string {
+  const [y, m, d] = isoDate.split('-').map(Number)
+  const dt = new Date(Date.UTC(y!, m! - 1, d))
+  dt.setUTCDate(dt.getUTCDate() - days)
+  const yy = dt.getUTCFullYear()
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getUTCDate()).padStart(2, '0')
+  return `${yy}-${mm}-${dd}`
+}
+
 /** Today's story date (YYYY-MM-DD) in the story timezone. */
 export function storyToday(now = new Date()): string {
   return formatDateInTimezone(now, STORY_TIMEZONE)
@@ -23,7 +34,6 @@ export function storyToday(now = new Date()): string {
 
 /** Story date N calendar days ago in the story timezone. */
 export function storyDaysAgo(days: number, now = new Date()): string {
-  const d = new Date(now)
-  d.setDate(d.getDate() - days)
-  return formatDateInTimezone(d, STORY_TIMEZONE)
+  if (days <= 0) return storyToday(now)
+  return subtractCalendarDays(storyToday(now), days)
 }

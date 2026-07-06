@@ -255,7 +255,7 @@ export async function loadDailyStory(): Promise<ResolvedStory> {
 async function fetchHistory(): Promise<StoryHistory | null> {
   try {
     const url = `${import.meta.env.BASE_URL}story-history.json`
-    const res = await fetch(url)
+    const res = await fetch(url, { cache: 'no-store' })
     if (res.ok) {
       return (await res.json()) as StoryHistory
     }

@@ -283,6 +283,18 @@ async function main() {
   )
 
   const generated = await generateFacts(headlines, factCount, salt)
+
+  if (
+    isStrictGenerate() &&
+    generated.length > 0 &&
+    generated.every((fact) => fact.provider === 'template')
+  ) {
+    exitGenerate(
+      1,
+      'All AI providers failed — template fallback is not allowed in strict mode',
+    )
+  }
+
   const newFacts = generated.map((fact) => ({
     ...fact,
     generatedAt: new Date().toISOString(),
