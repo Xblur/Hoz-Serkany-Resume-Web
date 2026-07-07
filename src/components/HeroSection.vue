@@ -1,6 +1,15 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import ProfileStory from './ProfileStory.vue'
 import { resume } from '../data/resume'
+
+const profileStoryRef = ref<InstanceType<typeof ProfileStory> | null>(null)
+
+defineExpose({
+  get portraitEl() {
+    return profileStoryRef.value?.portraitEl ?? null
+  },
+})
 </script>
 
 <template>
@@ -15,6 +24,7 @@ import { resume } from '../data/resume'
       >
         <div class="shrink-0">
           <ProfileStory
+            ref="profileStoryRef"
             :photo="resume.photo"
             :photo-alt="resume.photoAlt"
           />

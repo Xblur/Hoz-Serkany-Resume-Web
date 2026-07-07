@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick, ref, useTemplateRef } from 'vue'
 import { RouterLink } from 'vue-router'
 import SiteNav from '../components/SiteNav.vue'
 import HeroSection from '../components/HeroSection.vue'
@@ -8,6 +9,29 @@ import ProjectsSection from '../components/ProjectsSection.vue'
 import SkillsSection from '../components/SkillsSection.vue'
 import EducationSection from '../components/EducationSection.vue'
 import ContactSection from '../components/ContactSection.vue'
+import SpaceDefenderGame from '../components/SpaceDefenderGame.vue'
+import type { PortraitRect } from '../lib/spaceDefender/types'
+
+const heroRef = useTemplateRef<InstanceType<typeof HeroSection>>('hero')
+const gameOpen = ref(false)
+const portraitEl = ref<HTMLImageElement | null>(null)
+const triggerShipRect = ref<PortraitRect | null>(null)
+const triggerReturnFocus = ref<HTMLElement | null>(null)
+
+async function openSpaceDefender(payload: { triggerEl: HTMLElement; shipRect: PortraitRect }) {
+  triggerReturnFocus.value = payload.triggerEl
+  triggerShipRect.value = payload.shipRect
+  portraitEl.value = heroRef.value?.portraitEl ?? null
+  gameOpen.value = true
+}
+
+function closeSpaceDefender() {
+  gameOpen.value = false
+  nextTick(() => {
+    triggerReturnFocus.value?.focus()
+    triggerReturnFocus.value = null
+  })
+}
 </script>
 
 <template>
@@ -18,10 +42,10 @@ import ContactSection from '../components/ContactSection.vue'
     Skip to main content
   </RouterLink>
 
-  <SiteNav />
+  <SiteNav @open-space-defender="openSpaceDefender" />
 
   <main id="main">
-    <HeroSection />
+    <HeroSection ref="hero" />
     <AboutSection />
     <ExperienceSection />
     <ProjectsSection />
@@ -30,4 +54,11 @@ import ContactSection from '../components/ContactSection.vue'
   </main>
 
   <ContactSection />
+
+  <SpaceDefenderGame
+    v-if="gameOpen"
+    :portrait-el="portraitEl"
+    :trigger-ship-rect="triggerShipRect"
+    @close="closeSpaceDefender"
+  />
 </template>

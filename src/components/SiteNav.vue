@@ -2,6 +2,12 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { resume } from '../data/resume'
+import SpaceDefenderTrigger from './SpaceDefenderTrigger.vue'
+import type { PortraitRect } from '../lib/spaceDefender/types'
+
+const emit = defineEmits<{
+  'open-space-defender': [payload: { triggerEl: HTMLElement; shipRect: PortraitRect }]
+}>()
 
 const menuOpen = ref(false)
 const scrolled = ref(false)
@@ -12,6 +18,11 @@ function onScroll() {
 
 function closeMenu() {
   menuOpen.value = false
+}
+
+function openGame(payload: { triggerEl: HTMLElement; shipRect: PortraitRect }) {
+  emit('open-space-defender', payload)
+  closeMenu()
 }
 
 onMounted(() => {
@@ -37,13 +48,19 @@ onUnmounted(() => {
       class="page-container flex items-center justify-between gap-4 py-3"
       aria-label="Primary"
     >
-      <RouterLink
-        :to="{ path: '/', hash: '#top' }"
-        class="text-sm font-semibold tracking-tight text-ink no-underline hover:text-accent"
-        @click="closeMenu"
-      >
-        {{ resume.name }}
-      </RouterLink>
+      <div class="flex min-w-0 items-center gap-2 sm:gap-3">
+        <RouterLink
+          :to="{ path: '/', hash: '#top' }"
+          class="truncate text-sm font-semibold tracking-tight text-ink no-underline hover:text-accent"
+          @click="closeMenu"
+        >
+          {{ resume.name }}
+        </RouterLink>
+        <SpaceDefenderTrigger
+          class="hidden sm:inline-flex"
+          @open="openGame"
+        />
+      </div>
 
       <button
         type="button"
@@ -68,6 +85,9 @@ onUnmounted(() => {
           >
             {{ link.label }}
           </RouterLink>
+        </li>
+        <li class="mt-2 border-t border-line pt-2 md:hidden">
+          <SpaceDefenderTrigger @open="openGame" />
         </li>
       </ul>
     </nav>

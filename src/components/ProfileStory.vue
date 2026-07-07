@@ -24,6 +24,7 @@ const isPaused = ref(false)
 const pauseLocked = ref(false)
 const pauseEnabled = ref(false)
 const triggerRef = ref<HTMLButtonElement | null>(null)
+const portraitEl = ref<HTMLImageElement | null>(null)
 const dialogRef = ref<HTMLDivElement | null>(null)
 const previouslyFocused = ref<HTMLElement | null>(null)
 /** In-memory only — resets on hard refresh / new tab. */
@@ -324,6 +325,8 @@ onBeforeUnmount(() => {
   clearTimer()
   clearHoldTimer()
 })
+
+defineExpose({ portraitEl })
 </script>
 
 <template>
@@ -337,6 +340,7 @@ onBeforeUnmount(() => {
     @click="openStory"
   >
     <img
+      ref="portraitEl"
       :src="photo"
       :alt="photoAlt"
       width="176"
