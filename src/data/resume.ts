@@ -126,6 +126,7 @@ export const resume: Resume = {
         'Coordinated integration of software modules with existing radio control systems and legacy interfaces.',
         'Configured embedded Linux startup and system initialization for radio equipment; optimized software to run on a single processor core.',
         'Created Jenkins CI/CD pipelines for automated module testing and wrote scripts to automate submodule testing post-merge.',
+        'Completed an internal Ericsson object-oriented design patterns course in Java, building a radio management training project to apply OOP principles.',
         'Migrated legacy unit testing code from C to C++ and automated unit testing through designed test configurations.',
       ],
     },
