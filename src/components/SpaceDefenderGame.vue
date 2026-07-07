@@ -68,6 +68,7 @@ const planetWrapRef = useTemplateRef<HTMLDivElement>('planetWrap')
 const shipIntroRef = useTemplateRef<HTMLDivElement>('shipIntro')
 const contentDimRef = useTemplateRef<HTMLDivElement>('contentDim')
 const leaderboardRef = useTemplateRef<InstanceType<typeof SpaceDefenderLeaderboard>>('leaderboard')
+const gameOverLeaderboardRef = useTemplateRef<InstanceType<typeof SpaceDefenderLeaderboard>>('gameOverLeaderboard')
 const previouslyFocused = ref<HTMLElement | null>(null)
 
 const { width: windowWidth, height: windowHeight } = useWindowSize()
@@ -155,6 +156,9 @@ function createEngine(): SpaceDefenderEngine {
         playSfx('gameOver')
         phase.value = 'game-over'
         stopHireToasts()
+        void nextTick(() => {
+          void gameOverLeaderboardRef.value?.refresh()
+        })
       },
     },
   )
@@ -400,6 +404,7 @@ async function handleSubmitScore() {
   submitted.value = true
   submittedRank.value = result.rank ?? null
   await leaderboardRef.value?.refresh()
+  await gameOverLeaderboardRef.value?.refresh()
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -468,6 +473,7 @@ onBeforeUnmount(() => {
       aria-label="Space Defender mini-game"
       tabindex="-1"
       class="sd-game"
+      :class="{ 'sd-game--playing': phase === 'playing' }"
     >
       <div
         ref="overlay"
@@ -645,8 +651,15 @@ onBeforeUnmount(() => {
           You ranked #{{ submittedRank }} globally!
         </p>
 
+        <SpaceDefenderLeaderboard
+          ref="gameOverLeaderboard"
+          embedded
+          :highlight-name="submitted ? initials : undefined"
+          :player-score="submitted ? snapshot?.score : undefined"
+        />
+
         <p class="sd-game-over__hire">
-          <span>Oh no!Planet Hoz has been overrun by rejections.</span>
+          <span>Oh no! Planet Hoz has been overrun by rejections.</span>
           <span class="sd-game-over__hire-cta">Save it with an offer!</span>
         </p>
         <div class="sd-game-over__ctas">

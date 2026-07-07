@@ -303,6 +303,11 @@ button:focus-visible {
   touch-action: none;
 }
 
+.sd-game--playing {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .sd-game__overlay {
   position: absolute;
   inset: 0;
@@ -951,6 +956,39 @@ button:focus-visible {
 
 .sd-leaderboard--open {
   display: block;
+}
+
+.sd-leaderboard--embedded {
+  position: static;
+  display: block;
+  width: min(100%, 22rem);
+  max-height: none;
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 0.5rem;
+  background: rgb(15 23 42 / 0.55);
+  padding: 0.75rem 1rem 1rem;
+  box-shadow: none;
+}
+
+.sd-leaderboard--embedded .sd-leaderboard__header {
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.sd-leaderboard--embedded .sd-leaderboard__title {
+  font-size: 0.9375rem;
+}
+
+.sd-leaderboard--embedded .sd-leaderboard__table-wrap {
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.sd-leaderboard--embedded .sd-leaderboard__table {
+  font-size: 0.8125rem;
 }
 
 .sd-leaderboard__unavailable,

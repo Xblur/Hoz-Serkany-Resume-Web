@@ -7,7 +7,8 @@ import {
 } from '../lib/spaceDefender/leaderboard'
 
 const props = defineProps<{
-  open: boolean
+  open?: boolean
+  embedded?: boolean
   playerName?: string
   playerScore?: number
   highlightName?: string
@@ -45,13 +46,13 @@ function isHighlighted(entry: LeaderboardEntry): boolean {
 }
 
 onMounted(() => {
-  if (props.open) void loadScores()
+  if (props.embedded || props.open) void loadScores()
 })
 
 watch(
   () => props.open,
   (isOpen) => {
-    if (isOpen) void loadScores()
+    if (!props.embedded && isOpen) void loadScores()
   },
 )
 
@@ -59,14 +60,21 @@ defineExpose({ refresh: loadScores })
 </script>
 
 <template>
-  <aside
+  <component
+    :is="embedded ? 'div' : 'aside'"
     class="sd-leaderboard"
-    :class="{ 'sd-leaderboard--open': open }"
+    :class="{
+      'sd-leaderboard--open': !embedded && open,
+      'sd-leaderboard--embedded': embedded,
+    }"
     aria-label="Space Defender leaderboard"
   >
     <div class="sd-leaderboard__header">
-      <h2 class="sd-leaderboard__title">Leaderboard</h2>
+      <h2 class="sd-leaderboard__title">
+        {{ embedded ? 'Top 10 Leaderboard' : 'Leaderboard' }}
+      </h2>
       <button
+        v-if="!embedded"
         type="button"
         class="sd-leaderboard__close"
         aria-label="Close leaderboard"
@@ -137,5 +145,5 @@ defineExpose({ refresh: loadScores })
         </tbody>
       </table>
     </div>
-  </aside>
+  </component>
 </template>
