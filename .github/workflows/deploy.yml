@@ -3,84 +3,19 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  schedule:
-    # Daily story generation + deploy (no git commits)
-    - cron: '0 12 * * *'
-    # Monthly: sync live archive back into the repo (backup / fresh seed)
-    - cron: '0 6 1 * *'
   workflow_dispatch:
-    inputs:
-      generate_story:
-        description: Generate new story facts before deploy
-        type: boolean
-        default: false
-      story_count:
-        description: Number of story facts to generate (when generate is enabled)
-        type: number
-        default: 5
-      sync_archive:
-        description: Sync story-history.json from live site into repo
-        type: boolean
-        default: false
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-env:
-  STORY_FACT_COUNT_DEFAULT: 10
-  STORY_TIMEZONE: America/Toronto
-
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  sync-story-archive:
-    if: |
-      (github.event_name == 'schedule' && github.event.schedule == '0 6 1 * *') ||
-      (github.event_name == 'workflow_dispatch' && inputs.sync_archive == true)
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download live story archive
-        run: |
-          PAGES_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/story-history.json"
-          echo "Fetching ${PAGES_URL}"
-          curl -fsSL "$PAGES_URL" -o public/story-history.json.new
-
-      - name: Validate archive JSON
-        run: node -e "JSON.parse(require('fs').readFileSync('public/story-history.json.new','utf8'))"
-
-      - name: Commit and push if changed
-        run: |
-          if [ -f public/story-history.json ] && cmp -s public/story-history.json public/story-history.json.new; then
-            echo "Repo archive already matches production — nothing to commit"
-            exit 0
-          fi
-          mv public/story-history.json.new public/story-history.json
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/story-history.json
-          if git diff --staged --quiet; then
-            echo "No changes after replace"
-            exit 0
-          fi
-          git commit -m "chore: sync story archive from production"
-          git push origin HEAD:main
-
   build:
-    if: |
-      github.event_name == 'push' ||
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.event.schedule == '0 12 * * *')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -95,62 +30,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Snapshot repo story archive
-        run: cp public/story-history.json /tmp/story-archive-repo.json
-
-      - name: Restore story archive (cache)
-        uses: actions/cache/restore@v4
-        id: story-cache
-        with:
-          path: public/story-history.json
-          key: story-archive-${{ github.run_number }}
-          restore-keys: |
-            story-archive-
-
-      - name: Snapshot cache story archive
-        if: steps.story-cache.outputs.cache-hit == 'true'
-        run: cp public/story-history.json /tmp/story-archive-cache.json
-
-      - name: Download live story archive
-        continue-on-error: true
-        run: |
-          PAGES_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/story-history.json"
-          echo "Fetching live archive at ${PAGES_URL}"
-          curl -fsSL "$PAGES_URL" -o /tmp/story-archive-live.json || rm -f /tmp/story-archive-live.json
-
-      - name: Use newest story archive
-        env:
-          STORY_ARCHIVE_REPO: /tmp/story-archive-repo.json
-          STORY_ARCHIVE_CACHE: /tmp/story-archive-cache.json
-          STORY_ARCHIVE_LIVE: /tmp/story-archive-live.json
-        run: node scripts/restore-story-archive.mjs
-
-      - name: Generate daily story
-        if: |
-          (github.event_name == 'schedule' && github.event.schedule == '0 12 * * *') ||
-          inputs.generate_story == true
-        env:
-          STORY_FACT_COUNT: ${{ github.event_name == 'schedule' && env.STORY_FACT_COUNT_DEFAULT || github.event.inputs.story_count || env.STORY_FACT_COUNT_DEFAULT }}
-          STORY_GENERATE_STRICT: 'true'
-          STORY_TIMEZONE: ${{ env.STORY_TIMEZONE }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run generate-story
-
       - name: Build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
-
-      - name: Save story archive cache
-        uses: actions/cache/save@v4
-        with:
-          path: public/story-history.json
-          key: story-archive-${{ github.run_number }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -159,10 +43,6 @@ jobs:
 
   deploy:
     needs: build
-    if: |
-      github.event_name == 'push' ||
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.event.schedule == '0 12 * * *')
     runs-on: ubuntu-latest
     environment:
       name: github-pages

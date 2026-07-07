@@ -8,6 +8,7 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "generate-story": "node scripts/generate-story.mjs",
+    "import-story-archive": "node scripts/import-story-archive.mjs",
     "check-providers": "node scripts/check-providers.mjs"
   },
   "dependencies": {

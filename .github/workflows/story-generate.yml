@@ -1,0 +1,45 @@
+name: Generate daily story
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+    inputs:
+      story_count:
+        description: Number of story facts to generate
+        type: number
+        default: 10
+
+env:
+  STORY_FACT_COUNT_DEFAULT: 10
+  STORY_TIMEZONE: America/Toronto
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate daily story
+        env:
+          STORY_FACT_COUNT: ${{ github.event_name == 'schedule' && env.STORY_FACT_COUNT_DEFAULT || github.event.inputs.story_count || env.STORY_FACT_COUNT_DEFAULT }}
+          STORY_GENERATE_STRICT: 'true'
+          STORY_TIMEZONE: ${{ env.STORY_TIMEZONE }}
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run generate-story

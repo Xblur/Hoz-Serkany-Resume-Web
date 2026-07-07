@@ -1,21 +1,18 @@
 #!/usr/bin/env node
 /**
  * Daily story generator: search for recent tech headlines, let AI pick the best,
- * write facts per run (STORY_FACT_COUNT), append to public/story-history.json, prune to 120 days.
+ * insert facts per run (STORY_FACT_COUNT) into Supabase story_facts, prune to 120 days.
  */
 
-import { readFile, writeFile } from 'node:fs/promises'
 import { createHash, randomUUID } from 'node:crypto'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { getActiveProviders, callProviderModel, getModelsToTry } from './ai-providers.mjs'
 import { discoverTechHeadlines, normalizeUrl } from './discover-headlines.mjs'
 import { storyToday, storyDaysAgo } from './story-date.mjs'
+import { createSupabaseAdmin } from './supabase-admin.mjs'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const HISTORY_PATH = join(__dirname, '..', 'public', 'story-history.json')
 const MAX_ENTRIES = 120
 const DEFAULT_FACT_COUNT = 5
+const DEFAULT_LABEL = 'Tech fact of the day'
 
 function isStrictGenerate() {
   const raw = process.env.STORY_GENERATE_STRICT ?? ''
@@ -202,65 +199,67 @@ async function generateFacts(headlines, factCount, salt) {
   return templateFacts(headlines, factCount, salt)
 }
 
-function factsFromEntry(entry) {
-  if (entry.facts?.length) return entry.facts
-  if (entry.fact) return [entry.fact]
-  return []
-}
-
-function mergeFacts(existingFacts, newFacts) {
-  const seen = new Set()
-  const merged = []
-
-  for (const fact of [...existingFacts, ...newFacts]) {
-    const key = fact.sourceUrl ?? fact.body?.slice(0, 60)
-    if (!key || seen.has(key)) continue
-    seen.add(key)
-    merged.push({
-      label: 'Tech fact of the day',
-      body: fact.body,
-      sourceTitle: fact.sourceTitle,
-      sourceUrl: fact.sourceUrl,
-      provider: fact.provider,
-      model: fact.model ?? undefined,
-      generatedAt: fact.generatedAt ?? new Date().toISOString(),
-    })
-  }
-
-  return merged
-}
-
-async function readHistory() {
-  try {
-    const raw = await readFile(HISTORY_PATH, 'utf8')
-    return JSON.parse(raw)
-  } catch {
-    return { updatedAt: new Date().toISOString(), maxEntries: MAX_ENTRIES, entries: [] }
-  }
-}
-
-function upsertTodayFacts(history, today, newFacts) {
-  const entries = history.entries ?? []
-  const existing = entries.find((e) => e.date === today)
-  const mergedFacts = mergeFacts(factsFromEntry(existing ?? { facts: [] }), newFacts)
-
-  const entry = {
-    date: today,
-    generatedAt: new Date().toISOString(),
-    facts: mergedFacts,
-  }
-
-  const filtered = entries.filter((e) => e.date !== today)
-  const merged = [entry, ...filtered].sort((a, b) => b.date.localeCompare(a.date))
-
-  const cutoff = pruneCutoffDate()
-  const pruned = merged.filter((e) => e.date >= cutoff).slice(0, MAX_ENTRIES)
-
+function factToRow(entryDate, fact) {
   return {
-    updatedAt: new Date().toISOString(),
-    maxEntries: MAX_ENTRIES,
-    entries: pruned,
+    entry_date: entryDate,
+    label: DEFAULT_LABEL,
+    body: fact.body,
+    source_title: fact.sourceTitle ?? null,
+    source_url: fact.sourceUrl ?? null,
+    provider: fact.provider ?? null,
+    model: fact.model ?? null,
+    generated_at: fact.generatedAt ?? new Date().toISOString(),
   }
+}
+
+function isDuplicateError(error) {
+  return error?.code === '23505'
+}
+
+async function insertFacts(supabase, entryDate, facts) {
+  let inserted = 0
+  let skipped = 0
+
+  for (const fact of facts) {
+    const { error } = await supabase.from('story_facts').insert(factToRow(entryDate, fact))
+    if (error) {
+      if (isDuplicateError(error)) {
+        skipped++
+        continue
+      }
+      throw error
+    }
+    inserted++
+  }
+
+  return { inserted, skipped }
+}
+
+async function pruneOldFacts(supabase) {
+  const cutoff = pruneCutoffDate()
+  const { error, count } = await supabase
+    .from('story_facts')
+    .delete({ count: 'exact' })
+    .lt('entry_date', cutoff)
+
+  if (error) throw error
+  return count ?? 0
+}
+
+async function countDistinctDays(supabase) {
+  const { data, error } = await supabase.from('story_facts').select('entry_date')
+  if (error) throw error
+  return new Set((data ?? []).map((row) => row.entry_date)).size
+}
+
+async function countTodayFacts(supabase, today) {
+  const { count, error } = await supabase
+    .from('story_facts')
+    .select('*', { count: 'exact', head: true })
+    .eq('entry_date', today)
+
+  if (error) throw error
+  return count ?? 0
 }
 
 async function main() {
@@ -270,7 +269,7 @@ async function main() {
     headlines = await discoverTechHeadlines()
     if (headlines.length === 0) throw new Error('No headlines discovered')
   } catch (err) {
-    const message = `Headline discovery failed — history unchanged: ${err.message}`
+    const message = `Headline discovery failed — database unchanged: ${err.message}`
     exitGenerate(isStrictGenerate() ? 1 : 0, message)
   }
 
@@ -300,17 +299,18 @@ async function main() {
     generatedAt: new Date().toISOString(),
   }))
 
-  const history = await readHistory()
-  const updated = upsertTodayFacts(history, today, newFacts)
-  await writeFile(HISTORY_PATH, JSON.stringify(updated, null, 2) + '\n', 'utf8')
+  const supabase = createSupabaseAdmin()
+  const { inserted, skipped } = await insertFacts(supabase, today, newFacts)
+  const pruned = await pruneOldFacts(supabase)
+  const todayTotal = await countTodayFacts(supabase, today)
+  const dayCount = await countDistinctDays(supabase)
 
-  const todayFacts = updated.entries.find((e) => e.date === today)?.facts?.length ?? 0
   console.log(
-    `Story updated for ${today}: +${newFacts.length} fact(s), ${todayFacts} total today, ${updated.entries.length} days in archive`,
+    `Story updated for ${today}: +${inserted} inserted, ${skipped} duplicate(s) skipped, ${todayTotal} total today, ${dayCount} days in archive, ${pruned} row(s) pruned`,
   )
 }
 
 main().catch((err) => {
-  const message = `Unexpected error — history unchanged: ${err.message}`
+  const message = `Unexpected error — database unchanged: ${err.message}`
   exitGenerate(isStrictGenerate() ? 1 : 0, message)
 })

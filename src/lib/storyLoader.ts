@@ -1,4 +1,5 @@
 import { pickTidbitForDate } from '../data/storyTidbits'
+import { getSupabase, isSupabaseConfigured } from './supabase'
 import { storyDaysAgo, storyToday } from './storyDate'
 
 export interface StoryFact {
@@ -55,10 +56,23 @@ export interface ResolvedStory {
   sourceDate?: string
 }
 
+interface StoryFactRow {
+  id: string
+  entry_date: string
+  label: string
+  body: string
+  source_title: string | null
+  source_url: string | null
+  provider: string | null
+  model: string | null
+  generated_at: string
+  created_at: string
+}
+
 const EMERGENCY_FACTS: StoryFact[] = [
   {
     label: 'Tech fact of the day',
-    body: 'Edge CDNs now cache HTML selectively via stale-while-revalidate, letting static portfolio sites serve fresh JSON story files without rebuilding the entire page on every deploy.',
+    body: 'Edge CDNs now cache HTML selectively via stale-while-revalidate, letting static portfolio sites serve fresh content without rebuilding the entire page on every deploy.',
     sourceTitle: 'HTTP caching overview',
     sourceUrl: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching',
   },
@@ -79,6 +93,7 @@ const EMERGENCY_FACTS: StoryFact[] = [
 /** Max fact slides shown per story session (plus tidbit + CTA). */
 const MAX_FACT_SLIDES = 10
 const POOL_LOOKBACK_DAYS = 45
+const ARCHIVE_MAX_ENTRIES = 120
 
 function shuffle<T>(items: T[]): T[] {
   const arr = [...items]
@@ -105,6 +120,47 @@ function normalizeFact(record: StoryFactRecord): StoryFact {
     body: record.body,
     sourceTitle: record.sourceTitle,
     sourceUrl: record.sourceUrl,
+  }
+}
+
+function rowToFactRecord(row: StoryFactRow): StoryFactRecord {
+  return {
+    label: row.label,
+    body: row.body,
+    sourceTitle: row.source_title ?? undefined,
+    sourceUrl: row.source_url ?? undefined,
+    provider: row.provider ?? undefined,
+    model: row.model ?? undefined,
+    generatedAt: row.generated_at,
+  }
+}
+
+function rowsToHistory(rows: StoryFactRow[]): StoryHistory {
+  const byDate = new Map<string, StoryFactRecord[]>()
+  let latestAt = ''
+
+  for (const row of rows) {
+    const facts = byDate.get(row.entry_date) ?? []
+    facts.push(rowToFactRecord(row))
+    byDate.set(row.entry_date, facts)
+    if (row.generated_at > latestAt) latestAt = row.generated_at
+  }
+
+  const entries: StoryEntry[] = [...byDate.entries()]
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, facts]) => ({
+      date,
+      generatedAt: facts.reduce(
+        (max, f) => (f.generatedAt && f.generatedAt > max ? f.generatedAt : max),
+        facts[0]?.generatedAt ?? '',
+      ),
+      facts,
+    }))
+
+  return {
+    updatedAt: latestAt || new Date().toISOString(),
+    maxEntries: ARCHIVE_MAX_ENTRIES,
+    entries,
   }
 }
 
@@ -253,16 +309,26 @@ export async function loadDailyStory(): Promise<ResolvedStory> {
 }
 
 async function fetchHistory(): Promise<StoryHistory | null> {
+  if (!isSupabaseConfigured()) return null
+
+  const supabase = getSupabase()
+  if (!supabase) return null
+
   try {
-    const url = `${import.meta.env.BASE_URL}story-history.json`
-    const res = await fetch(url, { cache: 'no-store' })
-    if (res.ok) {
-      return (await res.json()) as StoryHistory
-    }
+    const cutoff = daysAgoIso(POOL_LOOKBACK_DAYS)
+    const { data, error } = await supabase
+      .from('story_facts')
+      .select('*')
+      .gte('entry_date', cutoff)
+      .order('entry_date', { ascending: false })
+
+    if (error) throw error
+    if (!data?.length) return null
+
+    return rowsToHistory(data as StoryFactRow[])
   } catch {
-    // fall through
+    return null
   }
-  return null
 }
 
 export function formatFallbackDate(dateStr: string): string {
