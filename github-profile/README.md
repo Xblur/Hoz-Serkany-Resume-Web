@@ -14,11 +14,9 @@ I am a computer engineer in Ottawa building production software across two track
 
 ## Selected public work
 
-- [Frame Pipeline C++](https://github.com/Xblur/frame-pipeline-cpp): bounded binary protocol parsing, a fixed worker pool, backpressure, metrics, CTest, sanitizers, Linux CI, and a repeatable benchmark
-- [Workflow Guard](https://github.com/Xblur/workflow-guard): a TypeScript and Postgres reference app demonstrating signed identity, transaction-scoped actor context, RLS tenant isolation, and database integration tests
 - [Portfolio](https://github.com/Xblur/Hoz-Serkany-Resume-Web): production case studies and separate Full-Stack Product and C++ / Systems resumes
 
-My recent commercial and startup repositories are private. The public projects above are purpose-built demonstrations using synthetic data and no employer or client code.
+My recent commercial and startup repositories are private.
 
 ## Connect
 
