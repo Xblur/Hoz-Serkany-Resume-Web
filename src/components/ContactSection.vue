@@ -19,20 +19,20 @@ import { resume } from '../data/resume'
         Contact
       </h2>
       <p class="mt-3 max-w-xl text-base leading-relaxed text-slate-300">
-        Based in {{ resume.contact.location }}. Reach out by email or connect on
-        LinkedIn and GitHub.
+        Based in {{ resume.contact.location }}. Choose the track that matches
+        your role, or reach out by email, LinkedIn, or GitHub.
       </p>
 
       <ul class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-8">
-        <li>
+        <li v-for="trackResume in resume.resumes" :key="trackResume.href">
           <a
-            :href="resume.resumePdf"
+            :href="trackResume.href"
             class="text-base font-medium text-white no-underline hover:text-blue-300"
-            download="Hoz-Serkany-Resume.pdf"
+            :download="trackResume.downloadName"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Download resume (PDF)
+            {{ trackResume.label }} (PDF)
           </a>
         </li>
         <li>

@@ -19,10 +19,26 @@ export interface ExperienceRole {
 
 export interface Project {
   name: string
+  track: 'Full-Stack Product' | 'C++ / Systems'
+  outcome: string
   description: string
+  highlights: string[]
   tech: string[]
   url?: string
   demoUrl?: string
+}
+
+export interface ResumeLink {
+  label: string
+  shortLabel: string
+  href: string
+  downloadName: string
+}
+
+export interface Outcome {
+  value: string
+  label: string
+  detail: string
 }
 
 export interface SkillGroup {
@@ -59,7 +75,8 @@ export interface Resume {
   summary: string
   photo: string
   photoAlt: string
-  resumePdf: string
+  resumes: ResumeLink[]
+  outcomes: Outcome[]
   contact: ContactInfo
   nav: NavLink[]
   experience: ExperienceRole[]
@@ -70,12 +87,47 @@ export interface Resume {
 
 export const resume: Resume = {
   name: 'Hoz Serkany',
-  title: 'Computer Engineering',
+  title: 'Full-Stack Product + C++ Systems Engineer',
   photo: `${import.meta.env.BASE_URL}hoz-serkany.png`,
   photoAlt: 'Portrait of Hoz Serkany',
-  resumePdf: `${import.meta.env.BASE_URL}Hoz-Serkany-Resume.pdf`,
+  resumes: [
+    {
+      label: 'Full-Stack Product resume',
+      shortLabel: 'Full-Stack resume',
+      href: `${import.meta.env.BASE_URL}Hoz-Serkany-Full-Stack-Product-Resume.pdf`,
+      downloadName: 'Hoz-Serkany-Full-Stack-Product-Resume.pdf',
+    },
+    {
+      label: 'Embedded/C++ Systems resume',
+      shortLabel: 'C++ / Systems resume',
+      href: `${import.meta.env.BASE_URL}Hoz-Serkany-Embedded-Cpp-Systems-Resume.pdf`,
+      downloadName: 'Hoz-Serkany-Embedded-Cpp-Systems-Resume.pdf',
+    },
+  ],
+  outcomes: [
+    {
+      value: '40+',
+      label: 'database migrations',
+      detail: 'Delivered for a secure Flutter and Supabase assignment platform.',
+    },
+    {
+      value: '70%',
+      label: 'less streamed payload',
+      detail: 'Removed duplicate notification volume in a production sensor platform.',
+    },
+    {
+      value: '30+',
+      label: 'production defects fixed',
+      detail: 'Improved operator workflows, reliability, and release confidence.',
+    },
+    {
+      value: '1 core',
+      label: 'embedded execution',
+      detail: 'Optimized radio messaging software by removing unnecessary threads.',
+    },
+  ],
   summary:
-    'Computer engineering professional with production experience building full-stack web platforms, Node.js backend services, Redux/Next.js frontends, and embedded Linux systems. Delivered AWS (ECS, EKS, Lambda, S3) deployments at Sensofusion and CI/CD automation at Ericsson; also built operator-facing command-and-control interfaces, live telemetry dashboards, and geospatial visualizations. Founder of Şandin Tech Inc., leading product engineering from architecture through launch. Experienced in field deployments and cross-functional hardware/software integration.',
+    'Computer engineer delivering product software across two focused tracks: secure full-stack platforms built with Flutter, TypeScript, Node.js, and Postgres, plus C++ systems spanning simulation, embedded Linux, networking, and automated verification. I take work from architecture through tested releases, field deployment, and operational handoff.',
   contact: {
     email: 'hozserkany@gmail.com',
     linkedin: 'https://www.linkedin.com/in/hoz-s-71873550/',
@@ -85,25 +137,43 @@ export const resume: Resume = {
   nav: [
     { id: 'about', label: 'About' },
     { id: 'experience', label: 'Experience' },
-    { id: 'projects', label: 'Projects' },
+    { id: 'projects', label: 'Case studies' },
     { id: 'skills', label: 'Skills' },
     { id: 'education', label: 'Education' },
     { id: 'contact', label: 'Contact' },
   ],
   experience: [
     {
+      company: 'Languages of Life',
+      title: 'Full-Stack Engineer (Contract)',
+      period: 'June 2026 – Present',
+      bullets: [
+        'Rebuilt an early Next.js prototype as a cross-platform Flutter app for iOS, Android, and web while extending its Supabase backend.',
+        'Delivered multi-role assignment workflows with Realtime updates and append-only audit history for clients, linguists, and admins.',
+        'Enforced server-side authorization with Postgres grants, RLS, lifecycle RPCs, optimistic concurrency, and two-session race-condition tests.',
+        'Shipped 40+ ordered migrations, Deno Edge Functions, GitHub Actions quality gates, Firebase staging, and production-readiness runbooks.',
+      ],
+    },
+    {
+      company: 'MNPS Inc.',
+      title: 'Co-Founder & CTO',
+      period: 'May 2026 – Present',
+      bullets: [
+        'Lead C++17 and CMake architecture for membrane process simulation, including segment-marching gas separation, multistage cascades with recycle, and plug-flow hollow-fibre models.',
+        'Built multicomponent flowsheets, module geometry options, and CTest regression against literature and patent-aligned stream targets.',
+        'Delivered CAPE-OPEN (COBIA) integration through a stable C ABI for industrial hosts such as Aspen Plus and HYSYS.',
+      ],
+    },
+    {
       company: 'Sensofusion',
       title: 'Full-Stack Software Developer',
       period: 'September 2025 – February 2026',
       bullets: [
-        'Fixed 30+ production bugs and shipped UI/UX improvements, including a mobile-view redesign, improving reliability and operator usability.',
+        'Fixed 30+ production bugs and shipped a mobile-view redesign, improving reliability and operator usability.',
         'Rebuilt and validated the Playwright end-to-end test suite, improving CI reliability and regression coverage.',
         'Deployed production workloads on AWS (ECS, EKS, Lambda, S3) and configured Cloudflare for secure routing and edge delivery.',
-        'Developed and maintained the command-and-control Next.js application with Redux, integrating multiple sensor types and countermeasure systems.',
-        'Built live telemetry dashboards and geospatial map views (D3.js, Leaflet, Mapbox, WebGL) for operator situational awareness.',
-        'Built Node.js backend-for-frontend (BFF) services to ingest, normalize, and stream sensor and mission data to the C2 client.',
-        'Reduced streamed payload volume by 70% for duplicated notifications through structural backend optimizations.',
-        'Supported Canadian market expansion through on-site field deployments, live customer demonstrations, and hardware/software integration.',
+        'Built Next.js/Redux operator interfaces and Node.js services for sensor, telemetry, geospatial, mission, and video data, reducing duplicate notification payload volume by 70%.',
+        'Supported on-site field deployments, customer demonstrations, and production ramp-up with hardware and software teams.',
       ],
     },
     {
@@ -111,7 +181,7 @@ export const resume: Resume = {
       title: 'Founder / Director',
       period: 'January 2023 – Present',
       bullets: [
-        'Lead Şandin Tech end to end—problem validation, product engineering, go-to-market, and startup operations for the Şand peer-to-peer delivery platform.',
+        'Lead Şandin Tech end to end: problem validation, product engineering, go-to-market, and startup operations for the Şand peer-to-peer delivery platform.',
         'Architect and maintain a Next.js/Express/MongoDB platform with modular REST APIs, containerized environments, and CI/CD-ready testing infrastructure.',
         'Build core product capabilities including JWT authentication, geolocation filtering, user verification, trust-based ratings, and video upload/streaming workflows.',
         'Built geospatial map views and server-side map tile generation using D3.js, Leaflet, Mapbox, and WebGL to support delivery discovery and workflow UI.',
@@ -133,41 +203,56 @@ export const resume: Resume = {
   ],
   projects: [
     {
-      name: 'Raspberry Pi Home Assistant Hub',
+      name: 'Languages of Life Assignment Platform',
+      track: 'Full-Stack Product',
+      outcome: 'Secure multi-role product delivered through staging and production readiness',
       description:
-        'Deployed and maintain a Raspberry Pi-based Home Assistant instance—OS imaging, networking setup, sensor and device integrations, automations, and ongoing administration.',
-      tech: ['Raspberry Pi OS', 'Home Assistant', 'Python', 'TCP/IP'],
+        'Rebuilt an early web prototype into a cross-platform assignment product for clients, linguists, and admins, while hardening the backend for authorization, concurrency, compliance, and operations.',
+      highlights: [
+        '40+ ordered Postgres migrations and a feature-first Flutter client',
+        'RLS, lifecycle RPCs, optimistic concurrency, and two-session race tests',
+        'FCM and Twilio Edge Functions, CI quality gates, Firebase staging, and release runbooks',
+      ],
+      tech: ['Flutter', 'Dart', 'Supabase', 'PostgreSQL', 'RLS', 'Deno', 'GitHub Actions'],
     },
     {
-      name: 'Autonomous Driving (Queen’s AutoDrive)',
+      name: 'MNPS Membrane Process Simulator',
+      track: 'C++ / Systems',
+      outcome: 'Industrial simulation core with automated numerical regression',
       description:
-        'Worked on 3D point cloud segmentation and classification using ROS for system integration on an autonomous vehicle platform.',
-      tech: ['Python', 'ROS', 'Keras', 'CNN', 'Transformers'],
+        'Architecting a native process simulation product for membrane gas separation, from multicomponent numerical models through industrial simulator integration.',
+      highlights: [
+        'Segment-marching, multistage recycle, and plug-flow hollow-fibre models',
+        'CTest regression against literature and patent-aligned stream targets',
+        'CAPE-OPEN (COBIA) unit operation exposed through a stable C ABI',
+      ],
+      tech: ['C++17', 'CMake', 'CTest', 'C ABI', 'CAPE-OPEN', 'Numerical simulation'],
     },
     {
-      name: 'Facial Emotion & Gesture Recognition',
+      name: 'Sensor Command-and-Control Platform',
+      track: 'Full-Stack Product',
+      outcome: '70% payload reduction and 30+ production defects resolved',
       description:
-        'Trained a CNN to classify seven emotions from images (90% accuracy) and designed a live-video gesture recognition system above 20 fps that synthesizes speech from a custom dictionary (70% accuracy).',
-      tech: ['Python', 'Flask', 'OpenCV', 'Keras', 'TensorFlow', 'NumPy'],
-      demoUrl: '/demos/gesture-recognition',
+        'Delivered operator-facing workflows and backend services for live sensor, mission, telemetry, geospatial, and video data in field environments.',
+      highlights: [
+        'Rebuilt Playwright end-to-end coverage and expanded Vitest and Storybook tests',
+        'Deployed AWS workloads across ECS, EKS, Lambda, and S3',
+        'Supported Canadian facility setup, field deployments, and customer demonstrations',
+      ],
+      tech: ['Next.js', 'Redux', 'Node.js', 'AWS', 'Playwright', 'Mapbox', 'WebGL'],
     },
     {
-      name: 'Deepfake Detection',
+      name: 'Embedded Radio Messaging',
+      track: 'C++ / Systems',
+      outcome: 'Constrained software optimized to one processor core',
       description:
-        'Built and trained a deep neural network to detect deepfake images.',
-      tech: ['Python', 'Flask', 'TensorFlow', 'Pandas'],
-    },
-    {
-      name: 'Elopement Prevention System',
-      description:
-        'Designed a sensor-integrated system to secure nursing home premises using embedded hardware and wireless connectivity.',
-      tech: ['C++', 'Hardware', 'Sensors', 'Bluetooth Mesh', 'RFID', 'IR'],
-    },
-    {
-      name: '16-bit Microprocessor Design',
-      description:
-        'Simulated a custom processor with branching functionalities and UART integration.',
-      tech: ['Assembly', 'VHDL', 'ModelSim', 'Altera'],
+        'Developed cloud-enabled messaging for radio equipment, integrated legacy control interfaces, and improved repeatable verification on embedded Linux.',
+      highlights: [
+        'Removed unnecessary threads to support single-core execution',
+        'Migrated legacy unit tests from C to C++',
+        'Built Jenkins pipelines and post-merge verification scripts',
+      ],
+      tech: ['C++', 'C', 'Embedded Linux', 'Jenkins', 'Python', 'Bash', 'Radio systems'],
     },
   ],
   skills: [
@@ -178,23 +263,25 @@ export const resume: Resume = {
         'Python',
         'TypeScript',
         'JavaScript',
+        'Dart',
         'C',
         'Java',
         'SQL',
-        'bash',
-        'Go (familiar)',
-        'C# (familiar)',
+        'Bash',
       ],
     },
     {
       category: 'Web & APIs',
       items: [
+        'Flutter',
         'Next.js',
         'React',
         'Redux',
         'Node.js',
         'Express',
         'REST',
+        'PostgreSQL',
+        'Supabase Auth & RLS',
         'MongoDB',
         'Playwright',
       ],
@@ -206,7 +293,8 @@ export const resume: Resume = {
         'Docker',
         'Kubernetes',
         'Jenkins',
-        'CI/CD',
+        'GitHub Actions',
+        'Firebase Hosting',
         'Git',
       ],
     },
@@ -214,20 +302,13 @@ export const resume: Resume = {
       category: 'Systems & embedded',
       items: [
         'Embedded Linux',
+        'CMake',
+        'CTest',
+        'CAPE-OPEN',
+        'Multithreading',
         'Microcontrollers',
         'Raspberry Pi',
         'TCP/IP',
-        'Home Assistant',
-      ],
-    },
-    {
-      category: 'AI/ML',
-      items: [
-        'TensorFlow',
-        'PyTorch',
-        'OpenCV',
-        'Computer vision',
-        'Scikit-learn',
       ],
     },
     {
@@ -236,7 +317,7 @@ export const resume: Resume = {
         'English (fluent)',
         'Kurdish (fluent)',
         'Arabic (fluent)',
-        'French (B-level, self-assessed)',
+        'French (intermediate)',
       ],
     },
   ],
@@ -247,7 +328,7 @@ export const resume: Resume = {
     period: 'September 2017 – April 2023',
     courses: [
       'Operating Systems',
-      'Algorithms',
+      'Advanced Data Analytics',
       'Cryptography & Network Security',
       'Microprocessor Systems',
       'Image Processing',
@@ -256,7 +337,7 @@ export const resume: Resume = {
       'Software Quality Assurance',
     ],
     award:
-      'First place, mechatronics/robotics competition—built and programmed a robot with fine-tuned servo motion control and multi-sensor feedback (C++, Arduino).',
+      'First place, mechatronics/robotics competition. Built and programmed a robot with fine-tuned servo motion control and multi-sensor feedback (C++, Arduino).',
     publication: {
       title: 'Stroke Prediction',
       publisher: 'David Publishing Company',
@@ -267,7 +348,7 @@ export const resume: Resume = {
     },
     volunteer: {
       org: 'QMIND AI Consulting',
-      role: 'Chatbot Development (VisaPlace)',
+      role: 'Chatbot Development (Immigration Law Firm)',
       period: 'September 2020 – April 2021',
       description:
         'Developed an AI chatbot using BotPress to automate applicant processing and scoring for an immigration law firm.',

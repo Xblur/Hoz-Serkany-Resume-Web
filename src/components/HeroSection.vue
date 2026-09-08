@@ -44,23 +44,34 @@ defineExpose({
           <p
             class="mx-auto mt-5 text-base leading-relaxed text-muted sm:text-lg md:mx-0"
           >
-            Computer engineering professional building full-stack web platforms,
-            embedded Linux systems, and production software—hardware and
-            software integrated end to end.
+            I build secure product platforms and reliable C++ systems, then carry
+            them through automated verification, deployment, and operational
+            handoff.
           </p>
           <ul
-            class="mt-8 flex flex-wrap justify-center gap-3 md:justify-start"
-            aria-label="Contact links"
+            class="mt-5 flex flex-wrap justify-center gap-2 md:justify-start"
+            aria-label="Engineering tracks"
           >
-            <li>
+            <li class="rounded-full bg-accent-soft px-3 py-1 text-sm font-medium text-accent">
+              Full-Stack Product
+            </li>
+            <li class="rounded-full bg-accent-soft px-3 py-1 text-sm font-medium text-accent">
+              C++ / Systems
+            </li>
+          </ul>
+          <ul
+            class="mt-7 flex flex-wrap justify-center gap-3 md:justify-start"
+            aria-label="Resume and contact links"
+          >
+            <li v-for="trackResume in resume.resumes" :key="trackResume.href">
               <a
-                :href="resume.resumePdf"
+                :href="trackResume.href"
                 class="inline-flex items-center rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white no-underline hover:bg-accent-hover"
-                download="Hoz-Serkany-Resume.pdf"
+                :download="trackResume.downloadName"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Download resume
+                {{ trackResume.shortLabel }}
               </a>
             </li>
             <li>
@@ -96,6 +107,24 @@ defineExpose({
           </ul>
         </div>
       </div>
+
+      <dl class="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          v-for="outcome in resume.outcomes"
+          :key="outcome.label"
+          class="card p-4"
+        >
+          <dt>
+            <span class="block text-2xl font-semibold tracking-tight text-ink">
+              {{ outcome.value }}
+            </span>
+            <span class="text-sm font-semibold text-accent">{{ outcome.label }}</span>
+          </dt>
+          <dd class="mt-2 text-sm leading-relaxed text-muted">
+            {{ outcome.detail }}
+          </dd>
+        </div>
+      </dl>
     </div>
   </section>
 </template>

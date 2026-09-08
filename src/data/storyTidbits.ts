@@ -3,47 +3,43 @@ export interface StoryTidbit {
   body: string
 }
 
-/** Static engineering tidbits tied to resume themes — slide 2 pool. */
+/** Static engineering tidbits tied to resume themes. */
 export const storyTidbits: StoryTidbit[] = [
   {
+    label: 'Secure product delivery',
+    body: 'Languages of Life combines Flutter with Supabase RLS, lifecycle RPCs, and two-session race tests so authorization and assignment state remain correct under concurrent use.',
+  },
+  {
+    label: 'C++ simulation',
+    body: 'MNPS uses C++17, CMake, and CTest to turn membrane process models into repeatable multistage simulations, with a stable C ABI for CAPE-OPEN host integration.',
+  },
+  {
     label: 'From the field',
-    body: 'At Sensofusion I cut streamed notification payload volume by 70% through structural backend changes—same operator UX, far less bandwidth on congested field networks.',
+    body: 'At Sensofusion I reduced streamed payload volume by 70% for duplicated notifications through structural backend changes, while also supporting field deployments and operator workflows.',
   },
   {
     label: 'Embedded insight',
-    body: 'On Ericsson Cloud RAN co-op I configured embedded Linux startup for single-core radio equipment, coordinating legacy interfaces with new messaging modules under tight CPU budgets.',
+    body: 'On Ericsson Cloud RAN co-op I configured embedded Linux startup, integrated legacy interfaces with new messaging modules, and removed extra threads so the software could run on one processor core.',
   },
   {
     label: 'Full-stack pattern',
-    body: 'Şandin Tech runs Next.js + Express + MongoDB with modular REST APIs and containerized CI—JWT auth, geolocation filters, and trust-based ratings all share one typed contract layer.',
-  },
-  {
-    label: 'Vision pipeline',
-    body: 'My capstone gesture demo held 20+ fps live inference by batching MediaPipe landmarks and debouncing gesture state—blink-to-confirm prevents accidental triggers better than raw classifiers alone.',
+    body: 'Şandin Tech uses Next.js, Express, and MongoDB with modular REST APIs and containerized environments. The product includes JWT authentication, geolocation filtering, user verification, and trust-based ratings.',
   },
   {
     label: 'Cloud deploy',
-    body: 'Production workloads on AWS ECS and EKS taught me that health-check grace periods matter as much as Dockerfile size—rolling deploys fail silently when probes fire before the BFF warms its connection pools.',
+    body: 'At Sensofusion I deployed production workloads across AWS ECS, EKS, Lambda, and S3, and configured Cloudflare for secure routing and edge delivery.',
   },
   {
     label: 'Test discipline',
-    body: 'Rebuilding Playwright E2E at Sensofusion meant flaky tests were product bugs: every retry hid a race between Redux hydration and WebSocket subscribe. Fixing the suite fixed operator-facing reliability.',
+    body: 'At Sensofusion I rebuilt and validated the Playwright end-to-end suite and expanded Vitest and Storybook coverage to improve CI reliability and regression protection.',
   },
   {
     label: 'Geospatial UX',
-    body: 'D3 + Leaflet + Mapbox in C2 dashboards: keep heavy layout off the main thread, stream deltas not full state, and tile-cache aggressively—operators pan maps during incidents, not during demos.',
-  },
-  {
-    label: 'Hardware meets software',
-    body: 'Queen\'s AutoDrive taught me ROS integration is 10% model accuracy and 90% timestamp alignment—point-cloud segmentation only matters if your lidar frames and odometry share a clock.',
+    body: 'At Sensofusion I built operator-facing geospatial views and custom map-tile generation with D3.js, Leaflet, Mapbox, and WebGL using sensor and operational data.',
   },
   {
     label: 'Home lab',
-    body: 'My Raspberry Pi Home Assistant hub is a living embedded project: VLAN-segmented IoT, MQTT automations, and the same TCP/IP debugging mindset I use on production BFF services.',
-  },
-  {
-    label: 'ML in production',
-    body: 'Deepfake detection and emotion CNNs both hit accuracy walls on domain shift—normalizing lighting in OpenCV pipelines bought more lift than swapping architectures without rebalancing training data.',
+    body: 'My Raspberry Pi Home Assistant hub includes Raspberry Pi OS setup, networking, sensor and device integrations, automations, and ongoing administration.',
   },
 ]
 

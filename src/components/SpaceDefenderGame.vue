@@ -671,7 +671,7 @@ onBeforeUnmount(() => {
             :class="{ 'sd-game-over__btn--primary': cta.primary }"
             :target="cta.external ? '_blank' : undefined"
             :rel="cta.external ? 'noopener noreferrer' : undefined"
-            :download="cta.download ? 'Hoz-Serkany-Resume.pdf' : undefined"
+            :download="cta.download ? cta.downloadName : undefined"
           >
             {{ cta.label }}
           </a>

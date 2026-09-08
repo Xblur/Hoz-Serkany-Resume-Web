@@ -14,15 +14,20 @@ function isInternalDemo(url: string) {
     aria-labelledby="projects-heading"
   >
     <div class="page-container section-pad">
-      <p class="section-label">Selected work</p>
-      <h2 id="projects-heading" class="section-title">Projects</h2>
+      <p class="section-label">Evidence by track</p>
+      <h2 id="projects-heading" class="section-title">Production case studies</h2>
+      <p class="mt-4 max-w-3xl text-base leading-relaxed text-muted">
+        Recent delivery across secure product engineering and C++ systems, with
+        the outcomes, verification, and operating context made explicit.
+      </p>
 
-      <ul class="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      <ul class="mt-8 grid gap-5 lg:grid-cols-2">
         <li
           v-for="project in resume.projects"
           :key="project.name"
           class="card-soft flex flex-col p-5 sm:p-6"
         >
+          <p class="section-label">{{ project.track }}</p>
           <div class="flex items-start justify-between gap-3">
             <h3 class="text-lg font-semibold leading-snug text-ink">
               {{ project.name }}
@@ -65,9 +70,17 @@ function isInternalDemo(url: string) {
               </a>
             </div>
           </div>
-          <p class="mt-2 flex-1 text-sm leading-relaxed text-slate sm:text-base">
+          <p class="mt-2 text-sm font-semibold leading-relaxed text-accent sm:text-base">
+            {{ project.outcome }}
+          </p>
+          <p class="mt-3 text-sm leading-relaxed text-slate sm:text-base">
             {{ project.description }}
           </p>
+          <ul class="mt-4 list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate">
+            <li v-for="highlight in project.highlights" :key="highlight">
+              {{ highlight }}
+            </li>
+          </ul>
           <ul class="mt-4 flex flex-wrap gap-2" aria-label="Technologies used">
             <li
               v-for="tech in project.tech"

@@ -55,8 +55,8 @@ export const hireToasts: HireMessage[] = [
   {
     id: 'ottawa',
     text: 'Based in Ottawa. Open to remote and on-site opportunities.',
-    ctaLabel: 'Download resume',
-    ctaHref: resume.resumePdf,
+    ctaLabel: 'Full-Stack resume',
+    ctaHref: resume.resumes[0]!.href,
   },
 ]
 
@@ -66,6 +66,7 @@ export interface GameOverCta {
   primary?: boolean
   external?: boolean
   download?: boolean
+  downloadName?: string
 }
 
 export const gameOverCtas: GameOverCta[] = [
@@ -80,9 +81,17 @@ export const gameOverCtas: GameOverCta[] = [
     external: true,
   },
   {
-    label: 'Download resume',
-    href: resume.resumePdf,
+    label: 'Full-Stack resume',
+    href: resume.resumes[0]!.href,
     download: true,
+    downloadName: resume.resumes[0]!.downloadName,
+    external: true,
+  },
+  {
+    label: 'C++ / Systems resume',
+    href: resume.resumes[1]!.href,
+    download: true,
+    downloadName: resume.resumes[1]!.downloadName,
     external: true,
   },
 ]

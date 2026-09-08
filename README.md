@@ -1,6 +1,11 @@
-# Resume site — Hoz Serkany
+# Portfolio site: Hoz Serkany
 
-Single-page resume site for a general Computer Engineer role.
+Single-page portfolio for two focused engineering tracks:
+
+- Full-Stack Product Engineering
+- C++ / Systems Engineering
+
+The first screen leads with measurable production outcomes. The case studies cover Languages of Life, MNPS, Sensofusion, and Ericsson. Separate PDF resumes are available for each track.
 
 **Stack:** Vite + Vue 3 + TypeScript + Tailwind CSS
 
@@ -22,7 +27,12 @@ npm run preview
 
 ## Content
 
-All resume content lives in [`src/data/resume.ts`](src/data/resume.ts). Edit that file to update experience, projects, skills, and contact details without changing the UI components.
+Structured portfolio content lives in [`src/data/resume.ts`](src/data/resume.ts). Track resume PDFs live in [`public/`](public/).
+
+Recruiter-facing GitHub profile materials are staged in [`github-profile/`](github-profile/):
+
+- [`README.md`](github-profile/README.md): profile README draft
+- [`PINNING_PLAN.md`](github-profile/PINNING_PLAN.md): repository readiness and pin order
 
 ## GitHub Pages
 

@@ -20,6 +20,8 @@ export const router = createRouter({
 })
 
 router.afterEach((to) => {
-  const title = (to.meta.title as string | undefined) ?? 'Hoz Serkany — Computer Engineering'
+  const title =
+    (to.meta.title as string | undefined) ??
+    'Hoz Serkany | Full-Stack Product + C++ Systems Engineer'
   document.title = title
 })
