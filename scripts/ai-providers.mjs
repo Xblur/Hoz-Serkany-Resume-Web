@@ -6,7 +6,7 @@
 export const SYSTEM_JSON =
   'You return only valid JSON: {"facts":[{"body":"...","headlineIndex":1}]} where headlineIndex is the 1-based number from the headline list. No sourceUrl. No markdown.'
 
-/** Comma-separated provider names to skip, e.g. STORY_SKIP_PROVIDERS=gemini,github-models */
+/** Comma-separated provider names to skip, e.g. STORY_SKIP_PROVIDERS=cerebras,gemini */
 export function getSkippedProviders() {
   const raw = process.env.STORY_SKIP_PROVIDERS ?? ''
   return new Set(
@@ -26,7 +26,7 @@ export function getActiveProviders() {
   return AI_PROVIDERS.filter((p) => !isProviderSkipped(p.name))
 }
 
-/** Ordered provider chain — Groq first. */
+/** Ordered provider chain — Groq first. GitHub Models retired July 2026. */
 export const AI_PROVIDERS = [
   {
     name: 'groq',
@@ -35,10 +35,9 @@ export const AI_PROVIDERS = [
     chatUrl: 'https://api.groq.com/openai/v1/chat/completions',
     modelsUrl: 'https://api.groq.com/openai/v1/models',
     preferredModels: [
-      'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
-      'mixtral-8x7b-32768',
-      'gemma2-9b-it',
+      'openai/gpt-oss-20b',
+      'openai/gpt-oss-120b',
+      'qwen/qwen3.8-27b',
     ],
   },
   {
@@ -49,8 +48,8 @@ export const AI_PROVIDERS = [
     modelsUrl: 'https://api.cerebras.ai/v1/models',
     preferredModels: [
       'gpt-oss-120b',
-      'gemma-4-31b',
-      'zai-glm-4.7',
+      'llama3.1-8b',
+      'llama-3.3-70b',
     ],
   },
   {
@@ -60,13 +59,15 @@ export const AI_PROVIDERS = [
     chatUrl: 'https://openrouter.ai/api/v1/chat/completions',
     modelsUrl: 'https://openrouter.ai/api/v1/models',
     preferredModels: [
-      'meta-llama/llama-3.3-70b-instruct:free',
-      'google/gemma-2-9b-it:free',
-      'qwen/qwen-2.5-72b-instruct:free',
-      'mistralai/mistral-7b-instruct:free',
+      'google/gemma-4-31b-it:free',
+      'google/gemma-4-26b-a4b-it:free',
+      'openai/gpt-oss-20b:free',
+      'openai/gpt-oss-120b:free',
+      'meta-llama/llama-3.2-3b-instruct:free',
+      'qwen/qwen3-coder:free',
     ],
     extraHeaders: {
-      'HTTP-Referer': 'https://github.com/HozSerkany/Hoz-Serkany-Resume-Web',
+      'HTTP-Referer': 'https://github.com/Xblur/Hoz-Serkany-Resume-Web',
       'X-Title': 'Hoz Serkany Resume',
     },
     filterAvailable: (models) =>
@@ -83,25 +84,11 @@ export const AI_PROVIDERS = [
     type: 'gemini',
     modelsUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
     preferredModels: [
-      'gemini-2.5-flash',
+      'gemini-3.6-flash',
+      'gemini-3.5-flash-lite',
       'gemini-flash-latest',
-      'gemini-2.5-flash-lite',
+      'gemini-2.5-flash',
       'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-1.5-flash',
-    ],
-  },
-  {
-    name: 'github-models',
-    env: 'GITHUB_TOKEN',
-    type: 'openai',
-    chatUrl: 'https://models.inference.ai.azure.com/chat/completions',
-    modelsUrl: 'https://models.inference.ai.azure.com/models',
-    preferredModels: [
-      'meta-llama/Llama-3.2-3B-Instruct',
-      'meta-llama/Llama-3.1-8B-Instruct',
-      'Mistral-small',
-      'gpt-4o-mini',
     ],
   },
 ]
@@ -116,9 +103,20 @@ function modelMatches(preferred, availableId) {
   return a === p || a.endsWith(`/${p}`) || a.includes(p) || p.includes(a)
 }
 
+/** Skip audio / guard / embedding IDs when falling back to discovery results. */
+const NON_CHAT_MODEL = /whisper|tts|orpheus|prompt-guard|safeguard|embedding|moderation|lyria/i
+
+/**
+ * Prefer chat-capable IDs from a discovered catalog when preferred names miss.
+ */
+export function pickFallbackModels(availableIds, limit = 4) {
+  return availableIds.filter((id) => !NON_CHAT_MODEL.test(id)).slice(0, limit)
+}
+
 /**
  * Pick preferred models that appear in the provider's available list.
- * Falls back to preferred list if discovery fails.
+ * If discovery succeeds but preferred IDs are gone, use live catalog IDs
+ * instead of retrying decommissioned preferred names.
  */
 export function resolveModels(preferred, availableIds) {
   if (!availableIds?.length) return [...preferred]
@@ -129,7 +127,10 @@ export function resolveModels(preferred, availableIds) {
     if (hit && !matched.includes(hit)) matched.push(hit)
   }
 
-  return matched.length > 0 ? matched : [...preferred]
+  if (matched.length > 0) return matched
+
+  const fallback = pickFallbackModels(availableIds)
+  return fallback.length > 0 ? fallback : [...preferred]
 }
 
 async function listOpenAIModels(modelsUrl, apiKey, extraHeaders = {}, filterFn = null) {
